@@ -48,22 +48,30 @@ souhaitent découpler leur **logique métier** des **détails techniques**.
 - [10. Le pattern Repository](#10-le-pattern-repository)
 - [11. Événements de domaine et communication asynchrone](#11-événements-de-domaine-et-communication-asynchrone)
 - [12. Bénéfices en testabilité (TDD)](#12-bénéfices-en-testabilité-tdd)
-- [13. Exemple complet en Python](#13-exemple-complet-en-python)
-- [14. Symfony en hexagonal : exemple complet](#14-symfony-en-hexagonal--exemple-complet)
-  - [14.1. Mapping conceptuel](#141-mapping-conceptuel)
-  - [14.2. Arborescence proposée](#142-arborescence-proposée)
-  - [14.3. Le domaine en POPO](#143-le-domaine-en-popo)
-  - [14.4. Les ports applicatifs](#144-les-ports-applicatifs)
-  - [14.5. Le use case applicatif](#145-le-use-case-applicatif)
-  - [14.6. L'adaptateur secondaire Doctrine](#146-ladaptateur-secondaire-doctrine)
-  - [14.7. L'adaptateur primaire HTTP](#147-ladaptateur-primaire-http)
-  - [14.8. Le conteneur de services Symfony](#148-le-conteneur-de-services-symfony)
-  - [14.9. Tests](#149-tests)
-- [15. Anti-patterns et pièges courants](#15-anti-patterns-et-pièges-courants)
-- [16. Quand ne PAS utiliser l'hexagonal ?](#16-quand-ne-pas-utiliser-lhexagonal-)
-- [17. Pour aller plus loin](#17-pour-aller-plus-loin)
-- [18. Auteur](#18-auteur)
-- [19. Licence](#19-licence)
+  - [12.1. La pyramide hexagonale](#121-la-pyramide-hexagonale)
+  - [12.2. TDD : le design émerge des tests, pas d'un BDUF](#122-tdd--le-design-émerge-des-tests-pas-dun-bduf)
+  - [12.3. Test d'application avec fakes en mémoire](#123-test-dapplication-avec-fakes-en-mémoire)
+- [13. Hexagonal vs Clean Architecture vs Onion](#13-hexagonal-vs-clean-architecture-vs-onion)
+- [14. Hexagonal et CQRS : commandes, requêtes, lecture](#14-hexagonal-et-cqrs--commandes-requêtes-lecture)
+- [15. Composition Root et câblage](#15-composition-root-et-câblage)
+- [16. Hexagonal à l'échelle : monolithe modulaire et microservices](#16-hexagonal-à-léchelle--monolithe-modulaire-et-microservices)
+- [17. Migrer un legacy Symfony vers l'hexagonal](#17-migrer-un-legacy-symfony-vers-lhexagonal)
+- [18. Exemple complet en Python](#18-exemple-complet-en-python)
+- [19. Symfony en hexagonal : exemple complet](#19-symfony-en-hexagonal--exemple-complet)
+  - [19.1. Mapping conceptuel](#191-mapping-conceptuel)
+  - [19.2. Arborescence proposée](#192-arborescence-proposée)
+  - [19.3. Le domaine en POPO](#193-le-domaine-en-popo)
+  - [19.4. Les ports applicatifs](#194-les-ports-applicatifs)
+  - [19.5. Le use case applicatif](#195-le-use-case-applicatif)
+  - [19.6. L'adaptateur secondaire Doctrine](#196-ladaptateur-secondaire-doctrine)
+  - [19.7. L'adaptateur primaire HTTP](#197-ladaptateur-primaire-http)
+  - [19.8. Le conteneur de services Symfony](#198-le-conteneur-de-services-symfony)
+  - [19.9. Tests](#199-tests)
+- [20. Anti-patterns et pièges courants](#20-anti-patterns-et-pièges-courants)
+- [21. Quand ne PAS utiliser l'hexagonal ?](#21-quand-ne-pas-utiliser-lhexagonal-)
+- [22. Pour aller plus loin](#22-pour-aller-plus-loin)
+- [23. Auteur](#23-auteur)
+- [24. Licence](#24-licence)
 
 ---
 
@@ -216,6 +224,14 @@ connaître :
 | **Domain event** | Fait métier qui s'est produit (au passé : `OrderPlaced`, `PaymentCaptured`). |
 | **Idempotence** | Propriété d'une opération qui produit le même résultat qu'elle soit appelée une ou plusieurs fois. |
 | **Anémie** | Anti-pattern où les entités n'ont aucun comportement, juste des getters/setters. |
+| **BDUF** | *Big Design Up Front* : tentation de tout modéliser (ports, adaptateurs, agrégats) avant la première ligne de test. À éviter. |
+| **CQRS** | *Command Query Responsibility Segregation* : sépare les commandes (qui écrivent) des requêtes (qui lisent). |
+| **Read model** | Modèle de lecture dénormalisé, distinct des agrégats, pensé pour servir efficacement une vue. |
+| **Composition Root** | Unique endroit du programme où l'on assemble le graphe d'objets et où l'on associe ports et adaptateurs. |
+| **Strangler Fig pattern** | Stratégie de migration legacy : enrober progressivement le code existant jusqu'à le remplacer entièrement. |
+| **Transactional outbox** | Pattern garantissant qu'un événement de domaine est publié *si et seulement si* l'écriture du même use case a été commitée. |
+| **Onion Architecture** | Variante cousine de l'hexagonal (Palermo, 2008), couches concentriques centrées sur le domaine. |
+| **Clean Architecture** | Synthèse de Robert C. Martin (2012), élève le *use case* en couche autonome avec ses propres *boundaries*. |
 
 [Retour en haut](#table-des-matières)
 
@@ -477,6 +493,34 @@ parallèle**. C'est précisément ce qui rend les tests faciles (`InMemoryReposi
 les changements de fournisseur indolores (`StripeAdapter` vs `PaypalAdapter` derrière un
 même `PaymentGateway`).
 
+### 7.4. Toutes les interfaces ne sont pas des ports
+
+Un malentendu très répandu en PHP : appeler *« port »* **toute** interface du projet.
+C'est faux, et c'est nuisible — quand tout est port, la métaphore perd son pouvoir
+explicatif.
+
+> **Règle.** Une interface est un **port** *uniquement* si elle décrit un échange à la
+> **frontière de l'hexagone**. Les interfaces internes (`StrategyInterface`,
+> `FormatterInterface` au sein de l'application, `EventInterface` dans le domaine) sont
+> des interfaces ordinaires, utiles pour la conception, mais elles ne sont pas des
+> ports.
+
+Ports légitimes (en PHP/Symfony) :
+
+| Interface | Port ? | Raison |
+|---|---|---|
+| `TaskRepositoryInterface` (Domain) | Oui (port secondaire) | Frontière vers la persistance |
+| `EmailNotifierInterface` (Application) | Oui (port secondaire) | Frontière vers SMTP |
+| `ClockInterface` (Application) | Oui (port secondaire) | Frontière vers l'horloge système |
+| `PlaceOrderUseCaseInterface` (Application) | Oui (port primaire) | Frontière offerte aux acteurs entrants |
+| `OrderEventInterface` (Domain) | **Non** | Type interne au domaine, aucune frontière |
+| `OrderStatusStrategy` interne au domaine | **Non** | Polymorphisme métier, pas un échange externe |
+| `LoggerInterface` (PSR-3) injecté dans un adaptateur | **Non** | Détail d'implémentation interne à l'adaptateur |
+
+Pourquoi cette discipline compte : si vous mettez un alias dans `services.yaml` pour
+*chaque* interface du projet, vous noyez les véritables ports — les seuls qui méritent
+d'être inspectés à chaque revue d'architecture — sous une mer d'interfaces ordinaires.
+
 [Retour en haut](#table-des-matières)
 
 ---
@@ -718,6 +762,29 @@ Avantages de ce pattern :
 - **historicité** : chaque événement est un fait du passé, traçable et rejouable ;
 - **extensibilité** : ajouter un nouveau consommateur n'impacte pas le producteur.
 
+> **Piège production : la fenêtre fatale entre `save` et `publish`.** Le use case
+> ci-dessus appelle d'abord `repository->save($order)`, puis `eventBus->publish($events)`.
+> Si le processus crashe *entre* les deux, l'agrégat est persisté mais l'événement n'est
+> jamais émis — incohérence silencieuse. La solution éprouvée est le **transactional
+> outbox**.
+
+> **Définition. Transactional outbox.** Pattern qui consiste à insérer l'événement de
+> domaine dans une table `outbox` *à l'intérieur de la même transaction* que l'écriture
+> de l'agrégat. Un worker dédié (relay) lit ensuite cette table et publie réellement les
+> événements vers le bus, en marquant ceux qui sont partis. La cohérence repose sur
+> l'atomicité de la transaction SQL, pas sur celle de deux ressources distinctes.
+
+```mermaid
+flowchart LR
+    UC[Use case] -->|même transaction| DB[(BDD : Order + Outbox)]
+    REL[Relay worker] -->|lit outbox| DB
+    REL -->|publie| BUS{{Bus de messages}}
+```
+
+Sans outbox, on accepte un risque résiduel ; avec outbox, la livraison est garantie *au
+moins une fois* — il faut alors que les consommateurs soient **idempotents**, ce qui est
+une bonne discipline de toute façon.
+
 [Retour en haut](#table-des-matières)
 
 ---
@@ -725,42 +792,494 @@ Avantages de ce pattern :
 ## 12. Bénéfices en testabilité (TDD)
 
 L'hexagonal n'impose pas le **TDD** (*Test-Driven Development*), mais les deux se
-renforcent mutuellement :
+renforcent mutuellement. Cette section précise *quel type de test* écrire à *quelle
+couche*, et — point souvent passé sous silence — explique pourquoi le design hexagonal
+**émerge** des tests au lieu d'être posé d'avance.
 
-- le **domaine** est testé par des tests unitaires purs (pas d'I/O, pas de mock de
-  framework, exécution en millisecondes) ;
-- l'**application** est testée avec des doubles en mémoire pour les ports secondaires ;
-- l'**infrastructure** est testée par des tests d'intégration (DB réelle, HTTP réel) ;
-- l'ensemble est validé par quelques tests **end-to-end**, peu nombreux et lents.
+> **Définition. TDD (*Test-Driven Development*).** Pratique de développement où le test
+> est écrit *avant* le code de production. Cycle red → green → refactor : on écrit un
+> test qui échoue, on écrit le minimum pour qu'il passe, puis on refactorise sans casser
+> les tests.
 
 > **Définition. Double de test.** Objet qui *remplace* une dépendance réelle dans un
-> test : *fake* (implémentation simplifiée), *stub* (renvoie des valeurs prédéfinies),
-> *mock* (vérifie qu'une méthode a bien été appelée), *spy* (enregistre les appels).
+> test : *fake* (implémentation simplifiée mais fonctionnelle, ex. repository en
+> mémoire), *stub* (renvoie des valeurs prédéfinies), *mock* (vérifie qu'une méthode a
+> bien été appelée avec tels arguments), *spy* (enregistre les appels pour inspection).
 
-Pyramide de tests typique :
+### 12.1. La pyramide hexagonale
+
+À chaque couche correspond *un type de test* avec *des dépendances bien définies*.
 
 ```mermaid
 flowchart TB
-    E2E[Tests end-to-end<br/>peu nombreux, lents] --> INT
-    INT[Tests d'intégration<br/>infrastructure] --> UNIT
-    UNIT[Tests unitaires du domaine<br/>nombreux, rapides]
+    E2E[Tests end-to-end<br/>peu nombreux, lents<br/>tout réel : navigateur, DB, file] --> INT
+    INT[Tests d'intégration<br/>adaptateurs réels<br/>DoctrineTaskRepositoryTest avec vraie DB] --> APP
+    APP[Tests d'application<br/>use case + fakes<br/>InMemoryRepository, FixedClock] --> UNIT
+    UNIT[Tests unitaires du domaine<br/>nombreux, rapides<br/>aucune dépendance, ms]
 ```
 
-Un domaine bien isolé permet de viser une couverture proche de 100 % avec des tests qui
-s'exécutent en quelques millisecondes, sans dépendance externe — donc reproductibles à
-l'identique sur n'importe quelle machine, à n'importe quel moment.
+| Couche testée | Dépendances réelles | Dépendances doublées | Objectif |
+|---|---|---|---|
+| Domaine | Aucune | Aucune | Vérifier les invariants et transitions d'état |
+| Application (use case) | Le domaine | Tous les ports secondaires (fakes en mémoire) | Vérifier l'orchestration |
+| Infrastructure (adaptateur) | DB / HTTP / file réels | Aucune | Vérifier que l'adaptateur respecte le contrat du port |
+| End-to-end | Tout | Aucune | Vérifier qu'un parcours utilisateur fonctionne |
+
+> **Piège fréquent.** Un test « unitaire » qui démarre Doctrine, instancie une vraie DB
+> en mémoire (SQLite) et appelle `DoctrineTaskRepository` n'est *pas* un test unitaire,
+> c'est un test d'intégration. La promesse hexagonale — *« les tests unitaires tournent
+> sans infrastructure »* — n'est tenue que si la classe sous test ne touche aucun port
+> secondaire concret.
+
+### 12.2. TDD : le design émerge des tests, pas d'un BDUF
+
+Une lecture naïve de l'hexagonal donne l'impression d'un processus en cascade : *« je
+définis d'abord tous mes ports, puis tous mes adaptateurs, puis je remplis le domaine »*.
+C'est faux, et ce malentendu produit des architectures sur-modélisées avant la première
+ligne de code utile.
+
+> **Définition. BDUF (*Big Design Up Front*).** Anti-pattern qui consiste à concevoir
+> intégralement l'architecture d'une application — interfaces, classes, schéma de base —
+> *avant* d'écrire du code et des tests. L'hexagonal y est particulièrement vulnérable
+> parce qu'il propose un vocabulaire séduisant (ports, adaptateurs, agrégats) qu'on a
+> envie d'instancier *partout*, prématurément.
+
+La pratique correcte, qui mêle hexagonal et TDD :
+
+1. **Partir d'un cas d'utilisation** réel (`PlaceOrder`, `RegisterUser`) ; pas d'une
+   couche, pas d'un module.
+2. **Écrire un test d'application** (use case + fakes) qui décrit le scénario *du point
+   de vue métier*. Ce test ne compile pas encore : c'est normal.
+3. **Faire émerger le port secondaire dont vous avez besoin** au moment où le test le
+   réclame (ex. *« il faudrait un `OrderRepository` »*). Le port a *exactement* les
+   méthodes que le test exige, pas une de plus.
+4. **Implémenter le strict minimum** dans le domaine pour faire passer le test.
+5. **Refactoriser** : extraire des VO, déplacer une règle d'un use case vers une entité,
+   simplifier des signatures.
+6. **Écrire l'adaptateur réel** (Doctrine, HTTP) seulement quand le besoin de production
+   le demande. Tant que vous itérez sur la conception, le fake suffit.
+
+Cette inversion — *test d'abord, port ensuite, adaptateur en dernier* — garantit que
+**aucun port ne survit s'il n'est pas justifié par un test**. C'est le meilleur garde-fou
+contre la sur-architecture. Un port sans test qui le motive est un port spéculatif :
+supprimez-le.
+
+> **Règle de l'expert.** Si vous écrivez un port `XxxRepositoryInterface` avant d'avoir
+> un test qui s'en sert, vous faites du BDUF. Renversez : un test rouge dicte le port,
+> jamais l'inverse.
+
+### 12.3. Test d'application avec fakes en mémoire
+
+L'exemple Symfony de la [section 19.9](#199-tests) ne montre que des tests de domaine.
+Voici le chaînon manquant : le test d'application, qui exerce un *use case* avec un
+repository et une horloge en mémoire.
+
+```php
+<?php
+// tests/TaskManagement/Application/CompleteTaskUseCaseTest.php
+declare(strict_types=1);
+
+namespace App\Tests\TaskManagement\Application;
+
+use App\TaskManagement\Application\Port\ClockInterface;
+use App\TaskManagement\Application\UseCase\CompleteTask\CompleteTaskCommand;
+use App\TaskManagement\Application\UseCase\CompleteTask\CompleteTaskUseCase;
+use App\TaskManagement\Domain\Event\TaskCompleted;
+use App\TaskManagement\Domain\Model\Priority;
+use App\TaskManagement\Domain\Model\Task;
+use App\TaskManagement\Domain\Model\TaskId;
+use App\TaskManagement\Domain\Repository\TaskRepositoryInterface;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Messenger\Envelope;
+use Symfony\Component\Messenger\MessageBusInterface;
+
+// Fake : implémentation simplifiée, *fonctionnelle*, du port secondaire.
+final class InMemoryTaskRepository implements TaskRepositoryInterface
+{
+    /** @var array<string, Task> */
+    private array $store = [];
+
+    public function save(Task $task): void { $this->store[$task->id->value] = $task; }
+    public function get(TaskId $id): Task
+    {
+        return $this->store[$id->value]
+            ?? throw new \DomainException("Task not found: {$id->value}");
+    }
+    public function listAll(): iterable { return array_values($this->store); }
+}
+
+// Fake : horloge fixe, déterministe.
+final class FixedClock implements ClockInterface
+{
+    public function __construct(private \DateTimeImmutable $now) {}
+    public function now(): \DateTimeImmutable { return $this->now; }
+}
+
+// Spy : enregistre les messages dispatchés sans les transporter réellement.
+final class SpyEventBus implements MessageBusInterface
+{
+    /** @var object[] */
+    public array $dispatched = [];
+    public function dispatch(object $message, array $stamps = []): Envelope
+    {
+        $this->dispatched[] = $message;
+        return new Envelope($message);
+    }
+}
+
+final class CompleteTaskUseCaseTest extends TestCase
+{
+    public function testCompleteTaskMarksItDoneAndPublishesEvent(): void
+    {
+        $repo = new InMemoryTaskRepository();
+        $clock = new FixedClock(new \DateTimeImmutable('2026-05-02 12:00:00'));
+        $bus = new SpyEventBus();
+
+        $task = new Task(
+            TaskId::generate(),
+            'Rédiger le mémo',
+            new \DateTimeImmutable('2026-12-31'),
+            Priority::High,
+        );
+        $repo->save($task);
+
+        $useCase = new CompleteTaskUseCase($repo, $clock, $bus);
+        $useCase(new CompleteTaskCommand($task->id->value));
+
+        self::assertTrue($repo->get($task->id)->isDone());
+        self::assertCount(1, $bus->dispatched);
+        self::assertInstanceOf(TaskCompleted::class, $bus->dispatched[0]);
+    }
+}
+```
+
+Ce test :
+
+- *n'instancie pas* le kernel Symfony ;
+- *ne touche pas* à Doctrine, ni à une vraie file de messages ;
+- s'exécute en *quelques millisecondes* ;
+- échouera *uniquement* si la logique d'orchestration ou la règle métier change.
+
+C'est le test à écrire **en premier**, avant même d'avoir un adaptateur Doctrine.
 
 [Retour en haut](#table-des-matières)
 
 ---
 
-## 13. Exemple complet en Python
+## 13. Hexagonal vs Clean Architecture vs Onion
+
+Trois noms circulent pour des architectures *cousines* mais *non identiques* : Hexagonal
+(Cockburn, 2005), Onion (Palermo, 2008), Clean Architecture (Martin, 2012). Beaucoup de
+tutoriels les utilisent comme synonymes. Ils partagent un cœur commun mais diffèrent dans
+les détails — et ces détails comptent quand on choisit comment structurer un projet.
+
+> **Définition. Onion Architecture.** Variante introduite par Jeffrey Palermo. Couches
+> concentriques : *Domain Model* → *Domain Services* → *Application Services* →
+> *Infrastructure*. Insiste sur le fait que toute dépendance va vers le centre.
+
+> **Définition. Clean Architecture.** Synthèse proposée par Robert C. Martin. Quatre
+> cercles : *Entities* (règles métier d'entreprise) → *Use Cases* (règles spécifiques à
+> l'application) → *Interface Adapters* (controllers, presenters, gateways) → *Frameworks
+> & Drivers* (DB, web, devices). Introduit la notion de *boundary* explicite et de
+> *presenter* pour la sortie.
+
+| Aspect | Hexagonal | Onion | Clean |
+|---|---|---|---|
+| Année | 2005 | 2008 | 2012 |
+| Métaphore | Polygone à *N* côtés | Couches concentriques | Cercles concentriques |
+| Vocabulaire central | *Ports & Adapters* | *Domain / Application / Infra* | *Entities / Use Cases / Interface Adapters / Frameworks* |
+| Symétrie entrée/sortie | Forte (tout est port) | Asymétrique | Asymétrique (controller vs presenter) |
+| Use cases nommés | Implicites | Implicites | **Explicites** (cercle dédié) |
+| Direction des dépendances | Vers l'hexagone | Vers le domaine | Vers le centre (*Dependency Rule*) |
+
+Points communs :
+
+- séparer la **logique métier** des **détails techniques** ;
+- inverser les dépendances via des interfaces possédées par les couches internes ;
+- rendre testables les règles métier sans I/O.
+
+Différences pratiques qui changent quelque chose :
+
+1. **Symétrie**. L'hexagonal traite les flux entrants et sortants de la même manière :
+   ce sont tous des ports. Clean introduit deux notions distinctes — *controllers* en
+   entrée, *presenters* en sortie — qui rappellent le pattern MVP.
+2. **Use cases comme cercle**. Clean élève le *use case* au rang de couche autonome avec
+   ses propres *boundaries* (interfaces d'entrée et de sortie). L'hexagonal les place
+   dans une couche application sans cérémonie particulière.
+3. **Onion** est essentiellement de l'hexagonal redessiné en oignon. Elle est moins
+   précise sur les ports nommés et plus insistante sur la pureté du domaine. Sur le
+   plan opérationnel, les deux conduisent au même code.
+
+> **Posture pragmatique.** Pour un projet PHP/Symfony, choisir une étiquette importe
+> moins que respecter les invariants partagés : domaine pur, ports possédés par
+> l'intérieur, adaptateurs à l'extérieur, dépendances dirigées vers le centre. Le reste
+> est cosmétique.
+
+[Retour en haut](#table-des-matières)
+
+---
+
+## 14. Hexagonal et CQRS : commandes, requêtes, lecture
+
+L'architecture hexagonale ne dit rien de la manière dont les données *sortent* de
+l'application. Le **CQRS** (*Command Query Responsibility Segregation*) propose une
+réponse claire qui s'intègre très bien dans un hexagone — à condition d'en comprendre les
+arbitrages.
+
+> **Définition. CQRS.** *Command Query Responsibility Segregation*. Pattern qui sépare
+> les opérations qui *modifient* l'état (*commands*, retournant idéalement `void`) des
+> opérations qui *lisent* l'état (*queries*, retournant un DTO). Conséquence : les deux
+> côtés peuvent avoir des modèles, des chemins de code et même des stockages différents.
+
+> **Définition. Read model (modèle de lecture).** Représentation des données pensée pour
+> être *lue efficacement* (souvent dénormalisée, pré-jointe, projetée), distincte du
+> modèle d'écriture (les agrégats). Peut vivre dans la même base que les écritures, dans
+> une vue SQL, dans un index Elasticsearch, ou être maintenu par projection d'événements.
+
+### 14.1. Côté écriture : le use case retourne `void` (ou un identifiant)
+
+Une *command* applicative doit retourner le strict minimum :
+
+- `void` quand l'identifiant est connu de l'appelant ;
+- l'**identifiant** (`OrderId`) quand l'application l'a généré.
+
+Retourner l'agrégat entier depuis un use case d'écriture est un anti-pattern : cela
+encourage l'appelant à le sérialiser tel quel, à fuiter sa structure interne, et à le
+modifier en dehors de la transaction.
+
+```php
+// BON : la commande renvoie void, ou l'id généré
+final class PlaceOrderUseCase
+{
+    public function __invoke(PlaceOrderCommand $cmd): OrderId { /* ... */ }
+}
+
+// MAUVAIS : la commande renvoie l'agrégat sérialisé
+final class PlaceOrderUseCase
+{
+    public function __invoke(PlaceOrderCommand $cmd): Order { /* ... */ }
+}
+```
+
+### 14.2. Côté lecture : un port dédié, pas le repository d'écriture
+
+Le repository (port d'écriture) sert à *charger un agrégat pour le modifier*. Il est
+inadapté pour servir une page d'écran qui affiche 50 commandes paginées avec leurs
+clients. Pour cela, on définit un **port de lecture** distinct.
+
+```php
+// Domain/Repository/OrderRepositoryInterface.php  (côté écriture)
+interface OrderRepositoryInterface
+{
+    public function get(OrderId $id): Order;       // charge un agrégat complet
+    public function save(Order $order): void;
+}
+
+// Application/Query/OrderListReadModel.php  (côté lecture)
+interface OrderListReadModel
+{
+    /** @return iterable<OrderListItemDto> */
+    public function listForCustomer(CustomerId $id, int $offset, int $limit): iterable;
+}
+```
+
+L'adaptateur de lecture peut taper *directement* en SQL avec un `SELECT` joignant
+plusieurs tables, sans passer par les agrégats — c'est l'idée. Le port de lecture vit
+dans `Application/` (et non dans `Domain/`) car son DTO est typiquement orienté *vue*,
+pas métier.
+
+### 14.3. Trois niveaux d'engagement CQRS
+
+| Niveau | Description | Coût | Quand l'adopter |
+|---|---|---|---|
+| **CQRS léger** | Use cases *commands* et *queries* séparés, même base, mêmes tables | Quasi nul | Par défaut |
+| **CQRS modéré** | Read models dénormalisés (vues SQL, projections) dans la même base | Moyen | Quand les requêtes de lecture deviennent complexes ou lentes |
+| **CQRS complet** | Stockage d'écriture et de lecture séparés, synchronisés par événements | Élevé | Très gros volumes, latence de lecture critique |
+
+> **Posture.** En PHP/Symfony, le CQRS léger est le bon défaut : un dossier
+> `Application/UseCase/` pour les commandes, un dossier `Application/Query/` pour les
+> lectures. Les deux côtés peuvent partager le même Doctrine en sous-jacent. Ne franchir
+> les niveaux suivants qu'avec une raison mesurée (un *p95* de requête qui ne tient plus
+> son SLA, un volume qui justifie une réplique).
+
+[Retour en haut](#table-des-matières)
+
+---
+
+## 15. Composition Root et câblage
+
+Une question rarement traitée frontalement dans les tutoriels hexagonaux : *où* exactement
+décide-t-on quelle implémentation va satisfaire quel port ? La réponse a un nom.
+
+> **Définition. Composition Root.** *Unique* endroit du programme — généralement à la
+> frontière entre le démarrage de l'application et le reste du code — où l'on assemble
+> le graphe des objets : on choisit quel adaptateur implémente quel port, on configure
+> les dépendances, on instancie le conteneur. Aucune autre partie du code n'a le droit
+> d'instancier directement un adaptateur.
+
+Pourquoi un *seul* endroit ? Parce que c'est la seule garantie qu'un changement de
+configuration (passer de `DoctrineTaskRepository` à `InMemoryTaskRepository` en test) ne
+nécessite *aucune* modification ailleurs. Si plusieurs endroits du code instancient des
+adaptateurs, vous avez plusieurs Composition Roots — donc des points de couplage cachés.
+
+| Plateforme | Où vit la Composition Root |
+|---|---|
+| Symfony | `config/services.yaml` + le compilateur du conteneur |
+| Spring | Classe `@Configuration` |
+| .NET | `Startup.cs` / `Program.cs` |
+| Node.js (sans framework) | `index.js` ou `bootstrap.js` |
+| Python (Flask/FastAPI) | Le module qui crée l'application + injection manuelle |
+
+En Symfony, la Composition Root se compose de :
+
+- `config/services.yaml` (et ses variantes `_dev.yaml`, `_test.yaml`, `_prod.yaml`) ;
+- les `CompilerPass` que vous écrivez pour des liaisons dynamiques (rare) ;
+- les attributs `#[AsAlias]`, `#[AsTaggedItem]` quand vous préférez la configuration en
+  PHP plutôt qu'en YAML.
+
+> **Anti-pattern : Composition Root éclatée.** Instancier `new DoctrineTaskRepository(...)`
+> à l'intérieur d'un contrôleur, d'un use case ou d'une factory métier. Le code n'est
+> plus testable : on ne peut plus substituer le repository sans toucher à la classe qui
+> l'instancie. Si vous voyez un `new` d'adaptateur en dehors de `config/`, c'est une
+> fuite.
+
+Astuce concrète Symfony : utilisez `bin/console debug:container --parameters` et
+`bin/console debug:autowiring` pour vérifier que *chaque* interface du domaine a bien un
+alias unique. Une interface sans alias = un port sans implémentation = une exception au
+runtime.
+
+[Retour en haut](#table-des-matières)
+
+---
+
+## 16. Hexagonal à l'échelle : monolithe modulaire et microservices
+
+Un seul hexagone est rarement suffisant pour un système réel. Cette section traite la
+question de la *composition* de plusieurs hexagones.
+
+> **Définition. Monolithe modulaire.** Application déployée comme un seul exécutable mais
+> structurée en *modules* indépendants, chacun étant un bounded context complet (avec son
+> propre `Domain/`, `Application/`, `Infrastructure/`). Les modules communiquent par des
+> ports explicites, jamais par accès direct à leurs internals.
+
+> **Définition. Microservice.** Bounded context déployé comme un *processus séparé*,
+> communiquant avec les autres via le réseau (HTTP, gRPC, messages). Les frontières
+> hexagonales coïncident avec les frontières de déploiement.
+
+### 16.1. Composition dans un monolithe modulaire
+
+```mermaid
+flowchart LR
+    subgraph BCT[Module Catalog]
+        CAT_HEX[Hexagone Catalog]
+    end
+    subgraph BCO[Module Order]
+        ORD_HEX[Hexagone Order]
+    end
+    subgraph BCB[Module Billing]
+        BILL_HEX[Hexagone Billing]
+    end
+    ORD_HEX -- port CatalogProvider --> CAT_HEX
+    ORD_HEX -- domain event OrderPlaced --> BILL_HEX
+```
+
+Règles de composition :
+
+1. **Aucun module n'importe l'`Domain/` d'un autre.** La communication se fait toujours
+   via un port défini dans le module *appelant* et implémenté en infrastructure.
+2. **Les domain events sont le canal de prédilection** pour les notifications
+   inter-modules. Le producteur n'a pas à savoir qui consomme.
+3. **Une ACL par frontière** : chaque module qui consomme un autre traduit le vocabulaire
+   à la frontière, comme expliqué [section 5.3](#53-anti-corruption-layer-acl).
+4. **Outils de contrôle structurel** : `deptrac` (PHP) ou `phparkitect` permettent de
+   vérifier *automatiquement* qu'aucun import ne franchit illégalement une frontière.
+
+### 16.2. De monolithe modulaire à microservices
+
+Un monolithe modulaire bien fait se *casse* en microservices presque mécaniquement :
+
+- chaque module devient un service ;
+- les ports synchrones deviennent des appels HTTP/gRPC ;
+- les domain events deviennent des messages Kafka/AMQP/Messenger transport ;
+- l'ACL devient une DTO sur le réseau au lieu d'un mapper en mémoire.
+
+> **Conseil de l'expert.** Commencez *toujours* par un monolithe modulaire. Tant que les
+> frontières hexagonales sont propres et vérifiées par `deptrac`, le passage en
+> microservices est une affaire d'extraction mécanique. Commencer en microservices avant
+> d'avoir compris ses bounded contexts conduit à un *distributed monolith* — le pire des
+> deux mondes.
+
+[Retour en haut](#table-des-matières)
+
+---
+
+## 17. Migrer un legacy Symfony vers l'hexagonal
+
+La plupart des projets Symfony en production *ne sont pas* hexagonaux à la base. Cette
+section explique comment introduire l'hexagonal *sans* big-bang.
+
+> **Définition. Strangler Fig pattern.** Stratégie de migration popularisée par Martin
+> Fowler. On ne réécrit pas le legacy d'un coup ; on l'enrobe progressivement. Chaque
+> nouvelle fonctionnalité — et chaque réécriture d'une ancienne — passe par la nouvelle
+> architecture, jusqu'à ce que le legacy soit naturellement étouffé par la nouvelle
+> structure (comme le ficus étrangleur tue lentement son hôte).
+
+### 17.1. Étapes recommandées
+
+1. **Identifier un bounded context candidat**. Choisir un module métier suffisamment
+   indépendant et suffisamment douloureux pour justifier l'effort. Idéalement un module
+   sur lequel des évolutions sont déjà prévues.
+2. **Tracer la frontière** dans `src/`. Créer `src/<NouveauContext>/Domain/`,
+   `Application/`, `Infrastructure/`, `UserInterface/`. Les vieilles classes restent où
+   elles sont.
+3. **Poser une ACL au contact du legacy**. Définir un port (`LegacyCustomerProvider`)
+   dans `Application/Port/`, et un adaptateur dans `Infrastructure/` qui *traduit* depuis
+   les vieilles entités Doctrine du legacy. Le nouveau domaine ne voit *jamais* les
+   entités legacy.
+4. **Écrire le premier use case en TDD** dans le nouveau contexte. Faire passer les
+   tests avec des fakes en mémoire.
+5. **Brancher l'adaptateur Doctrine** réel *seulement après* que la conception du domaine
+   soit stable.
+6. **Rediriger un endpoint** vers le nouveau use case (un `Controller` du nouveau
+   contexte qui remplace la route legacy).
+7. **Itérer** : un endpoint à la fois, un cas d'utilisation à la fois.
+
+### 17.2. Schéma : ACL au contact du legacy
+
+```mermaid
+flowchart LR
+    HTTP[Nouveau Controller] --> NEW_UC[Use case nouveau]
+    NEW_UC --> NEW_DOM[(Nouveau domaine<br/>POPO purs)]
+    NEW_UC -. via port .-> ACL[Adaptateur ACL]
+    ACL --> LEG_ENT[Entité Doctrine legacy<br/>annotée, anémique]
+    ACL --> LEG_SVC[CustomerManager<br/>service legacy]
+```
+
+Règles d'or de la migration :
+
+- **N'importez jamais** une classe du legacy directement dans le nouveau domaine.
+- **N'étendez jamais** une classe du legacy depuis le nouveau code.
+- **Doublez les écritures** pendant la transition : le nouveau code écrit dans le nouveau
+  modèle *et* dans l'ancien (via l'ACL), jusqu'à ce que tous les lecteurs aient migré.
+- **Outillez la frontière** avec `deptrac` pour interdire les imports interdits *au
+  niveau CI*. Sans contrainte automatique, la frontière finit par fuiter.
+
+> **Piège classique du strangler.** Coincer la migration à 70 % parce que les 30 %
+> restants sont *trop pénibles* à extraire. Pour éviter cela : prioriser la migration
+> par valeur métier, et accepter que certains coins du legacy resteront *définitivement*
+> derrière une ACL. Une ACL stable est préférable à une migration zombie.
+
+[Retour en haut](#table-des-matières)
+
+---
+
+## 18. Exemple complet en Python
 
 Voici un mini-domaine de **gestion de tâches** illustrant les trois couches. Le code est
 auto-contenu et exécutable. La version PHP/Symfony équivalente est donnée
-[à la section 14](#14-symfony-en-hexagonal--exemple-complet).
+[à la section 19](#19-symfony-en-hexagonal--exemple-complet).
 
-### 13.1. Domaine
+### 18.1. Domaine
 
 ```python
 # domain/task.py
@@ -793,7 +1312,7 @@ class Task:
         return not self.done and today > self.due_date
 ```
 
-### 13.2. Ports (application)
+### 18.2. Ports (application)
 
 ```python
 # application/ports.py
@@ -815,7 +1334,7 @@ class TaskRepository(ABC):  # Port secondaire
     def list_all(self) -> Iterable[Task]: ...
 ```
 
-### 13.3. Use case (application)
+### 18.3. Use case (application)
 
 ```python
 # application/use_cases.py
@@ -847,7 +1366,7 @@ class CompleteTaskUseCase:
         self.repo.add(task)  # idempotent : même id
 ```
 
-### 13.4. Adaptateur secondaire (infrastructure)
+### 18.4. Adaptateur secondaire (infrastructure)
 
 ```python
 # infrastructure/in_memory_repository.py
@@ -874,7 +1393,7 @@ class InMemoryTaskRepository(TaskRepository):
         return list(self._store.values())
 ```
 
-### 13.5. Adaptateur primaire et composition (infrastructure)
+### 18.5. Adaptateur primaire et composition (infrastructure)
 
 ```python
 # infrastructure/cli.py
@@ -905,7 +1424,7 @@ if __name__ == "__main__":
     main()
 ```
 
-### 13.6. Test unitaire pur
+### 18.6. Test unitaire pur
 
 ```python
 # tests/test_task.py
@@ -942,21 +1461,21 @@ c'est l'objectif principal de l'architecture hexagonale.
 
 ---
 
-## 14. Symfony en hexagonal : exemple complet
+## 19. Symfony en hexagonal : exemple complet
 
 Symfony est un framework PHP qui se prête très bien à une organisation hexagonale, à
 condition de **résister à la tentation** de tout coller dans des `Bundle`/`Service`/
 `Controller` couplés à Doctrine. Cette section reprend le mini-domaine de gestion de
 tâches et le décline en PHP 8.2+ / Symfony 7.
 
-### 14.1. Mapping conceptuel
+### 19.1. Mapping conceptuel
 
 | Élément Symfony | Couche hexagonale | Rôle |
 |---|---|---|
 | `Controller` | Adaptateur primaire (HTTP) | Reçoit la requête, valide, appelle un use case, sérialise la réponse |
 | `Console\Command` | Adaptateur primaire (CLI) | Lance un use case depuis la ligne de commande |
 | `Messenger Handler` | Adaptateur primaire (message) | Réagit à un message asynchrone en appelant un use case |
-| `Doctrine\Repository` étendu | Adaptateur secondaire (persistance) | Implémente un port de domaine `XxxRepositoryInterface` |
+| Classe Doctrine *qui n'étend pas* `EntityRepository` | Adaptateur secondaire (persistance) | Implémente un port de domaine `XxxRepositoryInterface` |
 | `Symfony\Mailer` | Adaptateur secondaire (e-mail) | Implémente un port `EmailNotifierInterface` |
 | `services.yaml` | Composition / câblage | Lie chaque interface du domaine à son adaptateur |
 | Use case (classe `*UseCase`) | Couche application | Orchestre le domaine |
@@ -973,7 +1492,7 @@ tâches et le décline en PHP 8.2+ / Symfony 7.
 > correspondant et l'injecte. Pour qu'il sache *quelle* implémentation injecter quand le
 > type est une interface, il faut un **alias** dans `services.yaml`.
 
-### 14.2. Arborescence proposée
+### 19.2. Arborescence proposée
 
 ```
 src/
@@ -1015,7 +1534,7 @@ src/
 Chaque bounded context a son propre quadruplet `Domain / Application / Infrastructure /
 UserInterface`. Cette arborescence rend la frontière hexagonale **visible à l'œil nu**.
 
-### 14.3. Le domaine en POPO
+### 19.3. Le domaine en POPO
 
 ```php
 <?php
@@ -1138,7 +1657,7 @@ Notez :
 - les événements de domaine sont *enregistrés* mais non *publiés* ; c'est le use case
   qui se charge de les transmettre au bus.
 
-### 14.4. Les ports applicatifs
+### 19.4. Les ports applicatifs
 
 ```php
 <?php
@@ -1178,7 +1697,7 @@ interface ClockInterface
 > au lieu d'appeler `new \DateTimeImmutable()` lui-même. Cela rend le domaine
 > *déterministe* et testable (on injecte une horloge fixe dans les tests).
 
-### 14.5. Le use case applicatif
+### 19.5. Le use case applicatif
 
 ```php
 <?php
@@ -1233,7 +1752,7 @@ final class CompleteTaskUseCase
 > est déjà un bus stable et bien isolé). Choisissez selon le ratio coût/bénéfice de votre
 > contexte.
 
-### 14.6. L'adaptateur secondaire Doctrine
+### 19.6. L'adaptateur secondaire Doctrine
 
 Pour respecter la règle « domaine sans annotation ORM », on sépare l'**entité du domaine**
 (`Task`, POPO) de l'**entité Doctrine** (`TaskOrmEntity`, annotée pour l'ORM). Un
@@ -1328,8 +1847,19 @@ final class DoctrineTaskRepository implements TaskRepositoryInterface
 
     public function save(Task $task): void
     {
+        // Doctrine ORM 3 a supprimé EntityManager::merge(). On gère explicitement
+        // l'insertion (entité non managée) et la mise à jour (entité existante en DB).
+        $existing = $this->em->find(TaskOrmEntity::class, $task->id->value);
         $orm = $this->mapper->toOrm($task);
-        $this->em->merge($orm);     // ou persist + gestion du upsert selon votre stratégie
+
+        if ($existing === null) {
+            $this->em->persist($orm);
+        } else {
+            $existing->title = $orm->title;
+            $existing->dueDate = $orm->dueDate;
+            $existing->priority = $orm->priority;
+            $existing->done = $orm->done;
+        }
         $this->em->flush();
     }
 
@@ -1351,12 +1881,20 @@ final class DoctrineTaskRepository implements TaskRepositoryInterface
 }
 ```
 
+> **Mise au point Doctrine 3.** `EntityManager::merge()`, encore largement présent dans
+> les tutoriels en ligne, a été *supprimé* en Doctrine ORM 3 (annoncé déprécié dès la
+> 2.7). Toute documentation hexagonale qui montre encore `$em->merge($orm)` est obsolète :
+> il faut `find` + `persist` (création) ou mutation des champs de l'entité managée
+> (mise à jour). Cette nuance est *exactement* le genre de détail d'infrastructure qui
+> *ne doit pas* fuiter dans le port `TaskRepositoryInterface` — celui-ci se contente de
+> dire `save(Task $task): void`.
+
 Ce découplage a un coût (deux classes au lieu d'une). Pour un petit projet, on peut
 **partir** d'une entité Doctrine annotée qui *est* aussi l'entité du domaine, et
 introduire le mapper le jour où l'on veut nettoyer la frontière. L'important est d'avoir
 *au moins* une interface `TaskRepositoryInterface` dans le domaine.
 
-### 14.7. L'adaptateur primaire HTTP
+### 19.7. L'adaptateur primaire HTTP
 
 ```php
 <?php
@@ -1394,7 +1932,7 @@ Le contrôleur ne fait *que* trois choses : extraire les données de la requête
 une *command* applicative, et traduire la réponse (ou l'exception métier) en HTTP. Toute
 règle métier est interdite ici.
 
-### 14.8. Le conteneur de services Symfony
+### 19.8. Le conteneur de services Symfony
 
 C'est la pièce qui *câble* l'hexagone. Le fichier `config/services.yaml` lie chaque
 **interface du domaine** à son **adaptateur d'infrastructure** :
@@ -1435,7 +1973,7 @@ services:
 C'est *exactement* la promesse de l'hexagonal : *changer un adaptateur sans toucher au
 domaine ni à l'application*. Le seul fichier modifié est le câblage.
 
-### 14.9. Tests
+### 19.9. Tests
 
 ```php
 <?php
@@ -1490,7 +2028,7 @@ règle métier ne change pas.
 
 ---
 
-## 15. Anti-patterns et pièges courants
+## 20. Anti-patterns et pièges courants
 
 | Piège | Description | Comment l'éviter |
 |---|---|---|
@@ -1501,7 +2039,7 @@ règle métier ne change pas.
 | **Repository fourre-tout** | `findBy(array $criteria)` qui accepte tout. | Méthodes nommées par cas d'usage : `findUnpaidOrders()`, `findCustomersDueForReminder()`. |
 | **Dépendance circulaire** *(domain ↔ application)* | Le domaine appelle un use case. | Le domaine ne connaît que lui-même. Les use cases orchestrent. |
 | **DTO confondus avec entités** | Renvoyer une entité directement à l'API. | Convertir en DTO/ViewModel dans l'adaptateur primaire. Ne jamais sérialiser une entité. |
-| **Sur-architecture** | Hexagonal pour un script de 200 lignes. | Voir section [16](#16-quand-ne-pas-utiliser-lhexagonal-). |
+| **Sur-architecture** | Hexagonal pour un script de 200 lignes. | Voir section [21](#21-quand-ne-pas-utiliser-lhexagonal-). |
 | **Adapter qui appelle un autre adapter** | `SmtpNotifier` qui appelle directement `PostgresUserRepository`. | Toujours passer par un use case ou par le domaine. Les adaptateurs ne se parlent pas entre eux. |
 | **Domaine couplé au framework** | `extends AbstractController`, `implements MessageHandlerInterface` dans le domaine. | Le domaine est PHP pur (POPO). Les adaptateurs *seuls* étendent les classes du framework. |
 | **Pas de bounded context** | Tout le code dans un seul `src/Entity/`, un seul `src/Service/`, ambiguïté sur les noms. | Découper par bounded context (`src/Catalog/`, `src/Billing/`, `src/Shipping/`). |
@@ -1509,12 +2047,21 @@ règle métier ne change pas.
 | **Use case qui contient une règle métier** | `if ($order->total > 1000) ...` dans le use case. | Déplacer la règle dans `Order` ou dans un service de domaine. Le use case orchestre, point. |
 | **Horloge implicite** | `new \DateTimeImmutable()` au milieu du domaine. | Injecter une `ClockInterface`. Rend le domaine déterministe et testable. |
 | **Identifiants générés par la DB** | Dépendre de l'auto-incrément SQL pour avoir un id. | Générer l'id côté domaine (UUID). L'agrégat naît avec son identité. |
+| **Service Locator dans un use case** | Le use case reçoit un `ContainerInterface` et fait `$container->get('xxx')`. | Injecter explicitement chaque dépendance dans le constructeur. Le use case doit *déclarer* ce dont il a besoin. |
+| **Classes « Manager » fourre-tout** | `OrderManager`, `UserManager` qui font tout : CRUD, règles métier, e-mail, log. | Renommer par cas d'utilisation (`PlaceOrderUseCase`), extraire la règle métier vers `Order`. Le mot « manager » est un signal d'alerte. |
+| **`Request`/`Response` Symfony dans le use case** | `__invoke(Request $request): Response` pour un use case. | Les types Symfony `Request`/`Response` restent *au contrôleur*. Le use case prend une *command* et renvoie un DTO ou `void`. |
+| **Test « unitaire » qui démarre Doctrine** | Test du domaine qui boot SQLite + schéma + Doctrine pour vérifier une règle métier. | Si vous ne pouvez pas tester sans I/O, c'est que vous testez l'infrastructure, pas le domaine. Renommer en *test d'intégration*. |
+| **Interface inutile** | Un port qui n'a *qu'une seule* implémentation prévisible et qui ne sert pas à tester. | Tous les ports n'ont pas besoin d'exister. Si vous n'avez pas besoin de double, gardez la classe concrète. |
+| **Publication d'événements hors transaction** | `repository.save(); bus.publish();` sans garantie atomique : crash entre les deux = événement perdu ou base incohérente. | Pattern *transactional outbox* : insérer l'événement dans une table `outbox` *dans la même transaction* que l'écriture, puis un worker dédié relaie vers le bus. |
+| **`#[Route]` sur un use case** | Annotation HTTP collée directement sur la classe applicative. | Les routes appartiennent aux contrôleurs. Le use case ne sait *rien* du transport. |
+| **CQRS sans bénéfice** | Mettre tout le monde derrière un *bus* + *handlers* « parce que CQRS » alors qu'on n'a ni read model dénormalisé ni problème de scale. | Commencer en CQRS léger (use case = commande applicative, requête = port de lecture). Ne pas mettre un bus juste pour le rituel. |
+| **Mocks qui imitent l'ORM** | Test qui mocke `EntityManagerInterface::find()`, `persist()`, `flush()` pour tester un repository. | Tester *l'adaptateur* contre une vraie DB (intégration). Mocker l'EntityManager teste votre mock, pas votre code. |
 
 [Retour en haut](#table-des-matières)
 
 ---
 
-## 16. Quand ne PAS utiliser l'hexagonal ?
+## 21. Quand ne PAS utiliser l'hexagonal ?
 
 L'architecture hexagonale **a un coût** (plus de fichiers, plus d'interfaces, plus
 d'indirection). Elle n'est pas toujours rentable :
@@ -1540,7 +2087,7 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ---
 
-## 17. Pour aller plus loin
+## 22. Pour aller plus loin
 
 - Alistair Cockburn, *Hexagonal Architecture*, 2005 — l'article fondateur.
 - Robert C. Martin, *Clean Architecture*, 2017 — vision élargie avec les *use cases* et
@@ -1562,7 +2109,7 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ---
 
-## 18. Auteur
+## 23. Auteur
 
 **Tanguy Chénier** — Tansoftware
 
@@ -1575,7 +2122,7 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ---
 
-## 19. Licence
+## 24. Licence
 
 Ce dépôt est distribué sous licence **MIT** — voir le fichier [LICENCE](./LICENCE).
 
