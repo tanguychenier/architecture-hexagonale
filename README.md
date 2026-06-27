@@ -19,8 +19,7 @@ l'architecture hexagonale se contente de ranger.
 
 Les exemples de code sont donnés en deux langages : **Python** (lisible, peu de syntaxe
 parasite, idéal pour saisir l'idée) et **PHP/Symfony** (un framework de production réel,
-pour montrer la transposition concrète). Chaque terme technique est expliqué dans un
-encadré à sa première apparition, avec une analogie tirée de la vie courante.
+pour montrer la transposition concrète).
 
 ---
 
