@@ -4,18 +4,23 @@
 ![Licence : MIT](https://img.shields.io/badge/licence-MIT-green)
 ![Sujet : Architecture logicielle](https://img.shields.io/badge/sujet-architecture%20logicielle-orange)
 
-Ce dépôt est un **cours** structuré sur l'**architecture hexagonale** (aussi appelée
-*Ports & Adapters*), formalisée par Alistair Cockburn en 2005, enrichi des notions de
-**Domain-Driven Design (DDD)** qui en sont les compagnons naturels. L'objectif est de
-fournir une référence pédagogique complète, illustrée par des diagrammes et des exemples
-de code en **Python** et en **PHP/Symfony**, à destination des développeurs qui
-souhaitent découpler leur **logique métier** des **détails techniques**.
+L'**architecture hexagonale** (aussi appelée *Ports & Adapters*, c'est-à-dire « ports et
+adaptateurs ») a été formalisée par Alistair Cockburn en 2005. Elle range le code d'une
+application de façon à séparer ce qui constitue le cœur du métier de ce qui relève de la
+technique. Le **Domain-Driven Design (DDD)**, qui veut dire « conception pilotée par le
+domaine », est sa méthode compagne : il indique comment modéliser le métier que
+l'architecture hexagonale se contente de ranger.
 
-> **Comment lire ce cours.** Les sections sont volontairement progressives. Chaque terme
-> technique est défini dans un encadré `> **Définition.**` à sa première apparition, puis
-> repris dans le glossaire. Les exemples Python servent à comprendre les idées sans bruit
-> syntaxique ; les exemples PHP/Symfony montrent comment les transposer dans un framework
-> de production réel.
+> **Que veut dire « architecture logicielle » ?** C'est la façon d'organiser les morceaux
+> d'un programme entre eux : quels dossiers existent, qui a le droit d'appeler qui, où
+> vivent les règles importantes. Imaginez le plan d'une maison : il décide où sont les
+> murs porteurs, les couloirs et les pièces. On peut changer la peinture (la technique)
+> sans toucher aux murs porteurs (le métier).
+
+Les exemples de code sont donnés en deux langages : **Python** (lisible, peu de syntaxe
+parasite, idéal pour saisir l'idée) et **PHP/Symfony** (un framework de production réel,
+pour montrer la transposition concrète). Chaque terme technique est expliqué dans un
+encadré à sa première apparition, avec une analogie tirée de la vie courante.
 
 ---
 
@@ -77,31 +82,41 @@ souhaitent découpler leur **logique métier** des **détails techniques**.
 
 ## 1. Introduction
 
-L'**architecture hexagonale** est un style d'architecture logicielle qui vise à découpler la
-**logique métier** des **détails techniques** (persistance, interface utilisateur, services
-externes, frameworks).
+L'**architecture hexagonale** sépare la **logique métier** des **détails techniques**
+(stockage des données, interface utilisateur, services externes, frameworks).
 
-> **Définition. Logique métier (business logic).** Ensemble des règles, invariants et
-> processus qui décrivent *le problème que résout l'application*, indépendamment de la
-> manière dont elle est livrée à l'utilisateur ou stockée sur disque. Exemple : « une
-> commande ne peut pas être expédiée si elle n'a pas été payée ».
+> **Que veut dire « logique métier » (en anglais *business logic*) ?** C'est l'ensemble
+> des règles qui décrivent *le problème que résout l'application*, indépendamment de la
+> manière dont on l'affiche ou dont on la stocke. Exemple : « une commande ne peut pas
+> être expédiée si elle n'a pas été payée ». Analogie : dans un restaurant, la logique
+> métier, ce sont les recettes et les règles du chef (on ne sert pas un plat cru). Que la
+> cuisine soit au gaz ou à l'induction (la technique) ne change pas les recettes.
 
-> **Définition. Détails techniques.** Choix d'implémentation qui peuvent changer sans que
-> le problème métier ne change : le moteur de base de données (PostgreSQL, MongoDB), le
-> protocole de transport (HTTP, gRPC), le framework (Symfony, Laravel), le format de
-> sérialisation (JSON, XML).
+> **Que veut dire « détails techniques » ?** Ce sont les choix d'outils qui peuvent
+> changer sans que le problème métier change : le moteur de base de données (PostgreSQL,
+> MongoDB), le protocole de communication (HTTP, gRPC), le framework (Symfony, Laravel),
+> le format d'échange des données (JSON, XML). Ce sont les appareils de la cuisine, pas
+> les recettes.
 
 Au cœur de l'hexagone se trouve le **domaine**, qui contient les règles métier et les cas
-d'utilisation. Il est entouré de **ports**, qui définissent les contrats d'interaction avec le
-monde extérieur, et d'**adaptateurs**, qui implémentent ces contrats.
+d'utilisation. Il est entouré de **ports**, qui définissent les contrats d'échange avec le
+monde extérieur, et d'**adaptateurs**, qui réalisent concrètement ces contrats.
 
-> **Définition. Port.** Une *interface* (au sens orienté objet du terme) appartenant à
-> l'application et qui décrit, dans le vocabulaire du domaine, **un échange** avec
-> l'extérieur. Un port n'est jamais une classe concrète ; c'est un contrat.
+> **Que veut dire « port » ?** Un port est une *interface*, c'est-à-dire une liste de
+> fonctions promises sans le code qui les réalise, un simple contrat. Il appartient à
+> l'application et décrit, dans le vocabulaire du métier, un échange avec l'extérieur.
+> Analogie : la prise électrique murale. Elle promet « du 230 volts ici ». Elle ne dit
+> pas d'où vient l'électricité (barrage, éolienne, centrale). Un port n'est jamais une
+> classe concrète ; c'est la forme du trou de la prise.
 
-> **Définition. Adaptateur.** Une *implémentation concrète* d'un port. C'est l'adaptateur
-> qui sait parler à PostgreSQL, à HTTP ou à un broker AMQP. Le domaine, lui, ne voit que
-> le port.
+> **Que veut dire « adaptateur » ?** C'est l'*implémentation concrète* d'un port : le code
+> qui sait réellement parler à PostgreSQL, à HTTP ou à un *broker* de messages. Analogie :
+> l'appareil que vous branchez dans la prise (lampe, ordinateur). Le mur (le domaine) ne
+> voit que la prise (le port), jamais l'appareil. On peut changer d'appareil sans toucher
+> au mur.
+>
+> *Broker* veut dire « courtier » : un programme intermédiaire qui reçoit les messages
+> d'un côté et les distribue de l'autre, comme un bureau de tri postal.
 
 ```mermaid
 flowchart LR
@@ -135,9 +150,16 @@ flowchart LR
 ```
 
 Le sens des flèches illustre la **règle d'or** de l'hexagonal : les dépendances pointent
-toujours **vers l'intérieur**, c'est-à-dire **vers le domaine**, jamais l'inverse. Le
-domaine ignore tout du reste du monde — c'est précisément ce qui le rend stable, testable
-et durable.
+toujours **vers l'intérieur**, c'est-à-dire **vers le domaine**, jamais l'inverse.
+
+> **Que veut dire « dépendance » ?** Un morceau de code A « dépend de » B quand A a besoin
+> de B pour fonctionner (il l'appelle, l'importe, le connaît). Analogie : si votre recette
+> exige une marque précise de four, la recette dépend de ce four ; changez de four et la
+> recette casse. On veut donc que les recettes (le domaine) ne dépendent d'aucun appareil.
+
+Le domaine ignore tout du reste du monde. C'est précisément ce qui le rend stable,
+testable et durable : aucun changement d'appareil ne peut le casser, puisqu'il n'en
+connaît aucun.
 
 [Retour en haut](#table-des-matières)
 
@@ -145,26 +167,40 @@ et durable.
 
 ## 2. Pourquoi l'hexagonal plutôt que le N-tier ?
 
-L'architecture **N-tier** classique (présentation → métier → données) est simple à
-comprendre, mais elle souffre de plusieurs limites structurelles.
+L'architecture **N-tier** classique (présentation puis métier puis données) est simple à
+comprendre, mais elle souffre de plusieurs limites profondes.
 
-> **Définition. Architecture N-tier.** Style d'architecture qui empile des couches en
-> cascade : la présentation appelle le métier, qui appelle la persistance. Le défaut
-> central : la couche métier *connaît* la couche persistance et hérite donc de ses
-> contraintes (modèle relationnel, types SQL, exceptions JDBC/PDO, etc.).
+> **Que veut dire « N-tier » ?** *Tier* veut dire « étage » ou « niveau » en anglais, et
+> *N* signifie « un nombre quelconque ». Une architecture N-tier empile donc des couches
+> en cascade : la présentation (l'écran) appelle le métier, qui appelle la persistance
+> (le stockage). Analogie : une chaîne de commandement où chaque chef parle au chef du
+> dessous. Le défaut : la couche métier *connaît* la couche stockage et hérite donc de ses
+> contraintes (le modèle de la base de données, les types SQL, les erreurs du pilote de
+> base de données). Le métier devient prisonnier de la technique.
+>
+> *SQL* veut dire *Structured Query Language*, « langage de requêtes structuré » : le
+> langage standard pour interroger une base de données relationnelle (des tables avec des
+> lignes et des colonnes). *Persistance* veut dire « le fait de conserver des données
+> durablement », typiquement sur disque, pour les retrouver après extinction du programme.
 
 | Aspect | N-tier classique | Hexagonal |
 |---|---|---|
 | Sens des dépendances | Métier dépend de la base de données | Tout dépend du métier |
-| Testabilité du domaine | Nécessite mocks de la DB ou DB en mémoire | Tests purs, sans I/O |
+| Testabilité du domaine | Nécessite des doublures de la base ou une base en mémoire | Tests purs, sans entrées-sorties (I/O) |
 | Remplacement d'un adaptateur (ex. SQL → MongoDB) | Coûteux, touche le métier | Isolé à un seul adaptateur |
 | Indépendance du framework | Faible (souvent couplé à Spring/Symfony/Django) | Forte |
 | Évolutivité | Bonne tant que la couche métier reste fine | Pensée pour absorber la complexité métier |
 | Durée de vie typique du métier | Court à moyen terme | Long terme (plusieurs migrations techniques) |
 
-En résumé : l'hexagonal protège votre **investissement métier** (la partie la plus durable de
-votre code) contre la volatilité des choix techniques. Une application bien structurée doit
-pouvoir survivre à un changement complet de framework ou de moteur de stockage **sans
+> **Que veut dire « I/O » (entrées-sorties) ?** *I/O* est l'abréviation de *Input/Output*,
+> « entrée/sortie ». Cela désigne toute communication d'un programme avec l'extérieur :
+> lire un fichier, interroger une base, appeler le réseau. Ces opérations sont lentes et
+> imprévisibles. Un « test pur, sans I/O » ne touche à rien de tout cela : il s'exécute
+> entièrement en mémoire, donc en une fraction de milliseconde.
+
+En résumé : l'hexagonal protège votre **investissement métier** (la partie la plus durable
+de votre code) contre l'instabilité des choix techniques. Une application bien structurée
+doit pouvoir survivre à un changement complet de framework ou de moteur de stockage **sans
 réécrire son domaine**.
 
 [Retour en haut](#table-des-matières)
@@ -173,24 +209,37 @@ réécrire son domaine**.
 
 ## 3. Prérequis
 
-Pour tirer pleinement profit de ce cours, il est utile (mais pas strictement nécessaire) de
-connaître :
+Quelques notions facilitent la lecture. Elles sont expliquées au fil du texte, mais les
+voici regroupées :
 
-- les principes **SOLID**, en particulier le **D** — *Dependency Inversion Principle* (DIP) ;
+- les principes **SOLID**, en particulier le **D**, le *Dependency Inversion Principle*
+  (DIP) ;
 - la notion d'**injection de dépendances** (DI) ;
 - les bases de la **POO** : interfaces, abstractions, polymorphisme ;
-- les concepts de base du **DDD** (entité, value object, agrégat) — utiles, mais
-  introduits ici à mesure du besoin.
+- les concepts de base du **DDD** (entité, value object, agrégat), introduits ici à
+  mesure du besoin.
 
-> **Définition. Injection de dépendances (DI, *Dependency Injection*).** Technique
-> consistant à *fournir* à un objet ses collaborateurs (ses dépendances) depuis
-> l'extérieur, plutôt que de les laisser les construire lui-même. Concrètement, on les
-> reçoit dans le constructeur ou via un setter. Cela permet de remplacer une dépendance
-> réelle par un double pour les tests.
+> **Que veut dire « POO » ?** *POO* signifie « programmation orientée objet ». C'est une
+> façon d'écrire du code en regroupant les données et les fonctions qui les manipulent
+> dans des « objets ». Une *interface* est la liste des fonctions qu'un objet promet
+> d'offrir ; le *polymorphisme* est le fait que plusieurs objets différents respectent la
+> même interface et sont donc interchangeables (une lampe et un grille-pain se branchent
+> tous deux dans la même prise).
 
-> **Définition. SOLID.** Acronyme de cinq principes de conception orientée objet :
-> *Single responsibility*, *Open-closed*, *Liskov substitution*, *Interface segregation*,
-> *Dependency inversion*.
+> **Que veut dire « injection de dépendances » (DI, *Dependency Injection*) ?** C'est le
+> fait de *fournir* à un objet ses collaborateurs depuis l'extérieur, au lieu de le
+> laisser les fabriquer lui-même. Concrètement, on les passe dans le constructeur (la
+> fonction qui crée l'objet). Analogie : un cuisinier qui reçoit ses ingrédients livrés
+> plutôt que d'aller les cueillir. On peut alors lui livrer de faux ingrédients pour
+> tester sa recette sans aller au marché.
+
+> **Que veut dire « SOLID » ?** C'est un moyen mnémotechnique pour cinq principes de bonne
+> conception orientée objet, dont l'initiale forme le mot SOLID (« solide » en anglais) :
+> *Single responsibility* (une seule responsabilité par classe), *Open-closed* (ouvert à
+> l'extension, fermé à la modification), *Liskov substitution* (toute sous-classe doit
+> pouvoir remplacer sa classe mère), *Interface segregation* (de petites interfaces
+> spécifiques plutôt qu'une grosse), *Dependency inversion* (dépendre d'abstractions, pas
+> de détails, expliqué en détail en section 8).
 
 [Retour en haut](#table-des-matières)
 
@@ -240,16 +289,26 @@ connaître :
 ## 5. Les fondations stratégiques : DDD et hexagonal
 
 L'architecture hexagonale décrit *où mettre le code*. Le **Domain-Driven Design** (DDD)
-décrit *comment modéliser le métier*. Les deux approches se complètent : l'hexagonal est
-le squelette structurel, le DDD remplit son intérieur. Cette section introduit les notions
-*stratégiques* du DDD qui rendent l'hexagonal pertinent à grande échelle.
+décrit *comment modéliser le métier*. Les deux se complètent : l'hexagonal est le
+squelette, le DDD le remplit. Voici les notions *stratégiques* du DDD, celles qui
+concernent l'organisation d'ensemble plutôt que le détail du code.
+
+> **Que veut dire « Domain-Driven Design » (DDD) ?** Traduit, « conception pilotée par le
+> domaine ». C'est une approche, formalisée par Eric Evans en 2003, qui dit : modélisez le
+> code à partir du vrai métier et de son vocabulaire, pas à partir de la base de données.
+> Le *domaine*, c'est le sujet que traite le logiciel (la vente, la facturation, la
+> logistique). « Piloté par le domaine » signifie donc « guidé d'abord par le métier ».
+> *Stratégique* désigne les grandes décisions de découpage (quels modules, quelles
+> frontières) ; *tactique* (section 9) désigne les briques de code à l'intérieur.
 
 ### 5.1. Langage ubiquitaire
 
-> **Définition. Langage ubiquitaire (*ubiquitous language*).** Vocabulaire commun, précis
-> et stable, partagé entre les experts métier, les développeurs, la documentation et le
-> code source à l'intérieur d'un même *bounded context*. Si un expert dit « commande »,
-> le code contient une classe `Order`, pas `OrderEntityDto2`.
+> **Que veut dire « langage ubiquitaire » (en anglais *ubiquitous language*) ?**
+> *Ubiquitaire* veut dire « présent partout ». C'est un vocabulaire commun, précis et
+> stable, employé à l'identique par les experts métier, les développeurs, la documentation
+> et le code. Si un expert dit « commande », le code contient une classe `Order`, jamais
+> `OrderEntityDto2`. Analogie : dans un hôpital, médecins, infirmiers et dossiers
+> utilisent les mêmes mots pour les mêmes choses, sinon les erreurs s'accumulent.
 
 Concrètement, le langage ubiquitaire impose une discipline : **chaque terme du domaine a
 un nom unique** et *ce nom apparaît tel quel dans le code*. Les noms des classes du
@@ -257,17 +316,20 @@ domaine, des méthodes, des événements et des use cases sont tirés directemen
 discussions avec les experts. C'est ce qui permet au code de devenir un support de
 conversation, et plus seulement un artefact technique.
 
-À la frontière du domaine — c'est-à-dire au niveau des ports — le langage ubiquitaire est
+À la frontière du domaine (c'est-à-dire au niveau des ports) le langage ubiquitaire est
 *roi*. Un port n'a pas le droit d'utiliser un mot qui n'appartient pas au métier ;
 inversement, l'adaptateur peut introduire son propre vocabulaire technique (`Row`,
 `Document`, `Payload`) sans contaminer le domaine.
 
 ### 5.2. Bounded context (contexte borné)
 
-> **Définition. Bounded context.** Frontière logique (souvent un module, un service, un
-> dépôt) à l'intérieur de laquelle un terme du langage ubiquitaire a un sens unique. Un
-> même mot — `Client`, `Produit`, `Facture` — peut signifier des choses très différentes
-> dans deux contextes différents (commercial vs comptabilité).
+> **Que veut dire « bounded context » (contexte borné) ?** Traduit, « contexte délimité ».
+> C'est une frontière (souvent un module, un service ou un dépôt) à l'intérieur de laquelle
+> un mot du vocabulaire métier a un sens unique. Un même mot (`Client`, `Produit`,
+> `Facture`) peut désigner des choses très différentes dans deux contextes (le service
+> commercial et la comptabilité). Analogie : le mot « avocat » ne signifie pas la même
+> chose au tribunal et chez le marchand de fruits ; chaque lieu est son propre contexte
+> borné.
 
 Exemple :
 
@@ -289,10 +351,15 @@ adaptateurs.
 
 ### 5.3. Anti-corruption layer (ACL)
 
-> **Définition. Anti-corruption layer (ACL, couche anti-corruption).** Couche de
-> traduction explicite placée à la frontière de deux bounded contexts (ou entre votre
-> domaine et un système externe legacy), dont l'unique rôle est d'empêcher les concepts
-> et les noms d'un côté de polluer l'autre côté.
+> **Que veut dire « anti-corruption layer » (ACL, couche anti-corruption) ?** C'est une
+> couche de traduction placée à la frontière entre deux contextes (ou entre votre domaine
+> et un vieux système externe), dont l'unique rôle est d'empêcher les mots et les concepts
+> d'un côté de contaminer l'autre. Analogie : un interprète à une réunion internationale.
+> Chaque partie parle sa langue ; l'interprète traduit pour qu'aucune ne soit obligée
+> d'apprendre la langue de l'autre.
+>
+> *Legacy* veut dire « hérité du passé » : du code ancien, toujours en service, souvent mal
+> structuré, que l'on doit composer avec sans pouvoir le réécrire d'un coup.
 
 Quand deux contextes doivent collaborer, ils ne se parlent **jamais** directement avec
 leurs modèles internes. On insère une ACL qui *traduit* : elle prend les concepts du
@@ -333,10 +400,13 @@ Une fois posée la frontière, comment deux contextes échangent-ils ?
   (`OrderPlaced`) sur un bus de messages ; le contexte B y souscrit et réagit. Découplage
   fort, mais introduit la complexité de la cohérence éventuelle (*eventual consistency*).
 
-> **Définition. Cohérence éventuelle (*eventual consistency*).** Propriété d'un système
-> distribué où, après une période de propagation, tous les contextes finissent par voir
-> les mêmes données — mais à un instant `t`, deux contextes peuvent être temporairement
-> désynchronisés.
+> **Que veut dire « cohérence éventuelle » (en anglais *eventual consistency*) ?** Dans un
+> système réparti sur plusieurs machines, après un court délai de propagation, tous les
+> contextes finissent par voir les mêmes données. Mais à un instant donné, deux d'entre eux
+> peuvent être brièvement désynchronisés. « Éventuelle » est un faux ami de l'anglais :
+> il faut comprendre « finit par devenir cohérente », pas « peut-être ». Analogie : un
+> commérage dans un village ; tout le monde finira par le savoir, mais pas exactement au
+> même instant.
 
 ```mermaid
 flowchart LR
@@ -346,10 +416,16 @@ flowchart LR
     BUS -- OrderPlaced --> D[Contexte Notifications]
 ```
 
-Dans une architecture hexagonale, le **bus** est un port secondaire (`EventPublisher`) du
-côté émetteur, et un adaptateur primaire (`EventListener`) du côté récepteur. Le domaine
-ne sait rien de RabbitMQ, Kafka ou Symfony Messenger — il ne sait que produire un
-événement dans son langage métier.
+> **Que veut dire « bus de messages » ?** C'est un canal partagé où l'on dépose des
+> messages et où d'autres viennent les récupérer, sans que l'expéditeur connaisse les
+> destinataires. Analogie : un tableau d'affichage dans un hall ; on y punaise une note,
+> et quiconque est intéressé la lit. RabbitMQ, Kafka et Symfony Messenger sont trois outils
+> qui jouent ce rôle de tableau d'affichage.
+
+Dans une architecture hexagonale, le bus est un port secondaire (`EventPublisher`) du côté
+qui émet, et un adaptateur primaire (`EventListener`) du côté qui reçoit. Le domaine ne
+sait rien de RabbitMQ, Kafka ou Symfony Messenger : il sait seulement produire un événement
+dans son langage métier.
 
 [Retour en haut](#table-des-matières)
 
@@ -357,9 +433,15 @@ ne sait rien de RabbitMQ, Kafka ou Symfony Messenger — il ne sait que produire
 
 ## 6. Les différentes couches
 
-L'architecture hexagonale s'organise généralement en couches concentriques. **Aucune
-couche extérieure ne doit être connue par une couche intérieure.** C'est l'expression
+L'architecture hexagonale s'organise en couches emboîtées comme des poupées russes.
+**Aucune couche extérieure ne doit être connue d'une couche intérieure.** C'est la forme
 géométrique de la règle de dépendance : *les flèches pointent toujours vers le centre*.
+
+> **Que veut dire « couche » ?** Un regroupement de code qui partage un même rôle et un
+> même niveau de proximité avec le métier. De l'intérieur vers l'extérieur : le domaine
+> (les règles), l'application (l'enchaînement des étapes), l'infrastructure (la technique),
+> l'interface (la porte d'entrée). Analogie : les peaux d'un oignon, le cœur étant le plus
+> protégé.
 
 ```mermaid
 flowchart TB
@@ -383,11 +465,16 @@ flowchart TB
 C'est le **cœur** de l'application. Il contient :
 
 - les **entités** (objets identifiés par un `id` et dotés d'un cycle de vie) ;
-- les **value objects** (immuables, comparés par valeur — ex. `Money`, `Email`) ;
-- les **aggregate roots** (entités qui orchestrent un cluster d'objets cohérents) ;
+- les **value objects** (immuables, comparés par valeur, par exemple `Money`, `Email`) ;
+- les **aggregate roots** (entités qui pilotent un groupe d'objets cohérents) ;
 - les **services de domaine** (logique qui ne *colle* pas à une entité unique) ;
-- les **événements de domaine** (faits métier au passé, signalant une transition d'état) ;
+- les **événements de domaine** (faits métier au passé, signalant un changement d'état) ;
 - les **invariants** (règles toujours vraies, qu'aucune opération ne doit pouvoir violer).
+
+> **Que veut dire « invariant » ?** Une condition qui doit rester vraie en permanence,
+> avant comme après chaque opération. Analogie : sur un compte courant sans découvert
+> autorisé, « le solde ne peut jamais être négatif » est un invariant. Tout le rôle du
+> domaine est de rendre ces règles impossibles à enfreindre.
 
 > **Règle absolue.** Le domaine n'importe **rien** des couches extérieures : pas de SQL,
 > pas de HTTP, pas de framework, pas de logger d'infrastructure, pas d'annotation ORM,
@@ -403,10 +490,26 @@ pas pur.
 
 Cette couche orchestre le domaine pour réaliser les **cas d'utilisation**. Elle contient :
 
-- les **use cases** (un par scénario métier — ex. `RegisterUser`, `PlaceOrder`) ;
+- les **use cases** (un par scénario métier, par exemple `RegisterUser`, `PlaceOrder`) ;
 - les **interfaces de ports** (primaires et secondaires) ;
 - les **DTO d'entrée/sortie** des use cases ;
 - la **gestion transactionnelle** logique (le « tout ou rien » d'un cas d'utilisation).
+
+> **Que veut dire « use case » (cas d'utilisation) ?** Un scénario complet rendu par
+> l'application, du début à la fin, vu côté métier : « inscrire un utilisateur », « passer
+> une commande ». Le use case enchaîne les étapes (lire, appeler le domaine, sauvegarder)
+> sans contenir lui-même de règle métier. Analogie : un chef d'orchestre, qui ne joue
+> d'aucun instrument mais coordonne les musiciens.
+
+> **Que veut dire « DTO » ?** *Data Transfer Object*, « objet de transport de données ».
+> C'est une structure plate, sans intelligence, qui sert uniquement à transporter des
+> valeurs d'une couche à une autre. Analogie : une enveloppe ; elle contient l'information
+> mais ne décide rien.
+
+> **Que veut dire « transactionnel » (le « tout ou rien ») ?** Une *transaction* regroupe
+> plusieurs opérations sur les données en un bloc indivisible : soit tout réussit, soit
+> rien n'est appliqué. Analogie : un virement bancaire ; débiter un compte sans créditer
+> l'autre serait catastrophique, donc les deux se font ensemble ou pas du tout.
 
 Elle dépend du domaine, mais reste ignorante de l'infrastructure. **Un use case ne doit
 jamais contenir de règle métier** ; il *orchestre* le domaine. La règle « un client
@@ -415,7 +518,7 @@ use case `PlaceOrderUseCase`.
 
 ### 6.3. L'infrastructure
 
-Couche externe qui implémente les ports secondaires :
+Couche externe qui réalise concrètement les ports secondaires :
 
 - adaptateurs de **persistance** (SQL via Doctrine/PDO, NoSQL, fichier) ;
 - adaptateurs de **services externes** (SMTP, S3, Stripe, etc.) ;
@@ -423,14 +526,33 @@ Couche externe qui implémente les ports secondaires :
 - configuration, **injection de dépendances**, démarrage de l'application ;
 - **mappers** entre entités du domaine et représentations techniques (lignes SQL, JSON).
 
+> **Que veut dire « ORM » ?** *Object-Relational Mapping*, « correspondance objet vers
+> relationnel ». C'est un outil (Doctrine en PHP) qui traduit automatiquement les objets
+> du code en lignes de table SQL et inversement. Analogie : un traducteur entre la langue
+> des objets et celle des tables. *NoSQL* désigne les bases qui ne sont pas des tables
+> relationnelles (documents, clé-valeur). *SMTP* est le protocole d'envoi d'e-mails ; *S3*
+> un service de stockage de fichiers ; *Stripe* un service de paiement.
+
+> **Que veut dire « mapper » ?** Un petit objet dont le seul travail est de convertir une
+> forme de donnée en une autre, par exemple une entité métier en ligne de base de données.
+> Analogie : un changeur de devises, qui transforme des euros en dollars sans modifier la
+> valeur réelle de l'argent.
+
 ### 6.4. L'interface (interface utilisateur / livraison)
 
 Certaines variantes (notamment la *Clean Architecture* de Robert C. Martin) séparent
-l'**interface** (ou *delivery mechanism*) de l'infrastructure :
+l'**interface** (ou *delivery mechanism*, « mécanisme de livraison ») de l'infrastructure :
 
-- adaptateurs de **transport entrant** : contrôleurs REST, GraphQL, CLI, gRPC, consumers
-  AMQP ;
+- adaptateurs de **transport entrant** : contrôleurs REST, GraphQL, ligne de commande
+  (CLI), gRPC, consommateurs de messages AMQP ;
 - vues, sérialisation, formats de réponse, codes HTTP.
+
+> **Que veut dire « sérialisation » ?** Transformer un objet en mémoire en une suite de
+> caractères transmissible (souvent du JSON ou du XML), puis l'inverse à la réception.
+> Analogie : démonter un meuble pour le faire tenir dans un carton de transport, puis le
+> remonter à l'arrivée. *CLI* veut dire *Command Line Interface*, « interface en ligne de
+> commande » : piloter le programme en tapant des commandes au clavier, sans écran
+> graphique.
 
 Dans la pratique Symfony, on regroupe souvent infrastructure et interface ; mais
 conceptuellement, distinguer « ce qui pilote le domaine » (interface) de « ce que le
@@ -444,20 +566,33 @@ domaine pilote » (infrastructure) clarifie la conception.
 
 ### 7.1. Ports primaires *(driving)*
 
+> **Que veut dire « port primaire » (en anglais *driving*, « qui conduit ») ?** C'est un
+> port par lequel le monde extérieur *commande* l'application. Le mot *driving* renvoie au
+> conducteur d'une voiture : c'est lui qui décide où l'on va. Un acteur primaire (un écran,
+> un contrôleur HTTP) appuie sur un port primaire pour déclencher un use case.
+
 Ils définissent **ce que fait** l'application : les commandes et requêtes exposées à
 l'extérieur. Exemples : `RegisterUserUseCase`, `GetOrderQuery`. Un port primaire est
-typiquement implémenté par un *use case*, et invoqué par un *adaptateur primaire* (un
+typiquement réalisé par un *use case*, et appelé par un *adaptateur primaire* (un
 contrôleur HTTP, par exemple).
 
-> **Convention CQRS utile.** On distingue souvent les *commands* (qui modifient l'état :
-> `PlaceOrder`) des *queries* (qui lisent : `GetOrderById`). Cette séparation, issue du
-> *Command Query Responsibility Segregation*, n'est pas obligatoire en hexagonal mais
-> clarifie souvent la conception.
+> **Aperçu de CQRS (détaillé en section 14).** *CQRS* veut dire *Command Query
+> Responsibility Segregation*, « séparation des responsabilités entre commandes et
+> requêtes ». On sépare les *commands* qui *modifient* l'état (`PlaceOrder`) des *queries*
+> qui *lisent* l'état (`GetOrderById`). Analogie : dans un magasin, la caisse (qui modifie
+> le stock) et la vitrine (qui montre les produits) sont deux comptoirs distincts. Cette
+> séparation n'est pas obligatoire mais clarifie souvent la conception.
 
 ### 7.2. Ports secondaires *(driven)*
 
+> **Que veut dire « port secondaire » (en anglais *driven*, « qui est conduit ») ?** C'est
+> un port par lequel l'application *commande* un service extérieur dont elle a besoin
+> (stockage, e-mail, horloge). Ici, c'est l'application qui conduit et l'extérieur qui
+> obéit, d'où *driven*. Analogie : le conducteur (l'application) appuie sur la pédale
+> d'accélérateur (le port secondaire) et le moteur (l'adaptateur) exécute.
+
 Ils définissent **ce dont l'application a besoin** : persistance, notifications, horloge,
-identifiants… Exemples : `UserRepository`, `EmailNotifier`, `Clock`, `IdGenerator`.
+identifiants. Exemples : `UserRepository`, `EmailNotifier`, `Clock`, `IdGenerator`.
 
 Le piège classique est de concevoir un port secondaire **depuis l'implémentation**
 (« j'ai besoin de Doctrine, donc je crée un `DoctrineUserRepository` ») au lieu de le
@@ -496,8 +631,8 @@ même `PaymentGateway`).
 ### 7.4. Toutes les interfaces ne sont pas des ports
 
 Un malentendu très répandu en PHP : appeler *« port »* **toute** interface du projet.
-C'est faux, et c'est nuisible — quand tout est port, la métaphore perd son pouvoir
-explicatif.
+C'est faux, et c'est nuisible : quand tout est port, le mot ne distingue plus rien et perd
+son utilité.
 
 > **Règle.** Une interface est un **port** *uniquement* si elle décrit un échange à la
 > **frontière de l'hexagone**. Les interfaces internes (`StrategyInterface`,
@@ -517,9 +652,14 @@ Ports légitimes (en PHP/Symfony) :
 | `OrderStatusStrategy` interne au domaine | **Non** | Polymorphisme métier, pas un échange externe |
 | `LoggerInterface` (PSR-3) injecté dans un adaptateur | **Non** | Détail d'implémentation interne à l'adaptateur |
 
-Pourquoi cette discipline compte : si vous mettez un alias dans `services.yaml` pour
-*chaque* interface du projet, vous noyez les véritables ports — les seuls qui méritent
-d'être inspectés à chaque revue d'architecture — sous une mer d'interfaces ordinaires.
+Pourquoi cette discipline compte : si vous déclarez un alias dans `services.yaml` pour
+*chaque* interface du projet, vous noyez les véritables ports (les seuls qui méritent d'être
+inspectés à chaque revue d'architecture) sous une mer d'interfaces ordinaires.
+
+> **Que veut dire « PSR-3 » ?** *PSR* signifie *PHP Standard Recommendation*,
+> « recommandation standard PHP » : des conventions partagées par l'écosystème PHP. PSR-3
+> est celle qui décrit l'interface standard d'un *logger* (un journal d'événements). C'est
+> un détail technique d'adaptateur, pas un port métier.
 
 [Retour en haut](#table-des-matières)
 
@@ -531,15 +671,25 @@ Le **DIP** (*Dependency Inversion Principle*) est le pilier qui rend l'hexagonal
 Sans inversion, le domaine finirait par dépendre de la base de données ; avec inversion,
 c'est l'infrastructure qui dépend du domaine.
 
-> **Définition. Dependency Inversion Principle (DIP).** *Les modules de haut niveau ne
-> doivent pas dépendre des modules de bas niveau. Les deux doivent dépendre
+> **Que veut dire « Dependency Inversion Principle » (DIP) ?** Traduit, « principe
+> d'inversion des dépendances ». La formule originale de Robert C. Martin : *les modules de
+> haut niveau ne doivent pas dépendre des modules de bas niveau ; les deux doivent dépendre
 > d'abstractions. Les abstractions ne doivent pas dépendre des détails ; les détails
-> doivent dépendre des abstractions.* (Robert C. Martin)
+> doivent dépendre des abstractions.* En clair : le code important (le métier) ne se branche
+> pas sur le code technique ; au contraire, c'est le code technique qui se branche sur un
+> contrat défini par le métier. Analogie : votre rasoir électrique ne se câble pas
+> directement à la centrale ; c'est la centrale qui respecte le standard de la prise, et
+> votre rasoir s'y conforme. « Inversion » nomme ce renversement du sens habituel.
 
 Concrètement, en hexagonal, **l'abstraction (le port) appartient au domaine** ;
-l'implémentation (l'adaptateur) appartient à l'infrastructure et **dépend** du domaine
-(elle implémente *son* interface). C'est ce renversement qui inverse la flèche
-traditionnelle « métier → DB » en « DB → métier ».
+le code concret (l'adaptateur) appartient à l'infrastructure et **dépend** du domaine
+(il réalise *son* interface). C'est ce renversement qui inverse la flèche habituelle
+« métier vers base de données » en « base de données vers métier ».
+
+> **Que veut dire « abstraction » ?** Une description épurée qui dit *ce qu'on attend* sans
+> dire *comment c'est fait*. Une interface est une abstraction. Analogie : « un moyen de
+> transport » est abstrait ; « ce TGV précis » est concret. Dépendre de l'abstraction
+> permet d'échanger le concret sans rien casser.
 
 **Exemple sans DIP :**
 
@@ -582,13 +732,19 @@ C'est cette propriété qui justifie tout le reste de l'architecture.
 ## 9. Modélisation tactique : agrégats, entités, value objects
 
 L'hexagonal dit *où* mettre les choses ; le DDD dit *quelles* choses mettre. Voici le
-vocabulaire tactique minimal pour modéliser un domaine riche.
+vocabulaire de base pour modéliser un domaine riche. *Tactique* s'oppose ici à
+*stratégique* (section 5) : on descend des grandes frontières aux briques de code.
 
 ### 9.1. Entité
 
-> **Définition. Entité.** Objet métier doté d'une **identité unique et stable** (souvent
-> un UUID), dont l'identité est conservée tout au long de son cycle de vie même si ses
-> attributs changent. Un client `#42` reste `#42` même s'il change de nom.
+> **Que veut dire « entité » ?** Un objet métier reconnu par une **identité propre, unique
+> et stable** (souvent un UUID), conservée toute sa vie même si ses attributs changent. Un
+> client `#42` reste `#42` même s'il change de nom. Analogie : vous restez vous-même malgré
+> un changement de coiffure ou d'adresse ; votre identité ne tient pas à vos attributs.
+>
+> *UUID* veut dire *Universally Unique Identifier*, « identifiant unique universel » : un
+> long code (par exemple `f47ac10b-58cc-...`) pratiquement impossible à voir apparaître
+> deux fois, ce qui sert à étiqueter un objet de façon sûre.
 
 Caractéristiques :
 
@@ -599,9 +755,12 @@ Caractéristiques :
 
 ### 9.2. Value object
 
-> **Définition. Value object (VO).** Objet métier **immuable**, sans identité, comparé
-> *par valeur*. Deux `Money(10, "EUR")` sont strictement interchangeables. Un VO
-> représente une *quantité* ou une *qualité*, pas une *chose*.
+> **Que veut dire « value object » (VO, objet-valeur) ?** Un objet métier **immuable** (que
+> l'on ne modifie jamais après création), sans identité, comparé *par sa valeur*. Deux
+> `Money(10, "EUR")` sont parfaitement interchangeables, comme deux pièces de 10 euros : on
+> ne se demande pas « laquelle ». Un VO représente une *quantité* ou une *qualité*, pas une
+> *chose*. Analogie : un billet de banque (une valeur) face à une personne (une entité,
+> avec son histoire).
 
 Avantages des VO :
 
@@ -615,9 +774,14 @@ Règle pratique : *si vous hésitez entre une primitive et un VO, prenez le VO*.
 
 ### 9.3. Aggregate root (racine d'agrégat)
 
-> **Définition. Agrégat.** Cluster d'entités et de VO étroitement liés que l'on traite
-> comme **une seule unité de cohérence transactionnelle**. Toute modification doit
-> traverser la **racine** de l'agrégat (*aggregate root*), qui en garantit les invariants.
+> **Que veut dire « agrégat » et « aggregate root » (racine d'agrégat) ?** Un *agrégat* est
+> un petit groupe d'entités et de value objects étroitement liés, traité comme **une seule
+> unité de cohérence** : on les sauvegarde et on les modifie ensemble, jamais séparément.
+> L'*aggregate root* (la racine) est l'unique objet par lequel on a le droit de toucher au
+> groupe ; c'est lui qui garantit les invariants. Analogie : une commande au restaurant. La
+> note (la racine) regroupe ses lignes de plats ; on n'ajoute pas un plat directement, on
+> passe toujours par la note, qui recalcule le total et refuse une note déjà payée. *Mot
+> anglais « cluster »* = grappe, groupe serré.
 
 Exemple : un agrégat `Order` contient une racine `Order` et des `OrderLine` enfants. On
 ne modifie **jamais** une `OrderLine` directement depuis l'extérieur ; on appelle
@@ -633,24 +797,53 @@ Trois règles de conception :
 3. **Un repository par aggregate root**, pas un par entité. On ne *persiste* pas une
    `OrderLine` toute seule ; on persiste l'`Order` entier.
 
+Le diagramme suivant montre la frontière de l'agrégat (le cadre) : tout passe par la
+racine, et le lien vers `Customer` se fait par identifiant, pas par objet.
+
+```mermaid
+classDiagram
+    class Order {
+        +OrderId id
+        +CustomerId customerId
+        +addLine(produit, quantite)
+        +removeLine(ligneId)
+        +total() Money
+    }
+    class OrderLine {
+        +ProductId productId
+        +int quantite
+        +Money prixUnitaire
+    }
+    class Customer {
+        +CustomerId id
+    }
+    Order "1 (racine)" *-- "0..* (enfants)" OrderLine : contient
+    Order ..> Customer : reference par customerId
+```
+
 ### 9.4. Services de domaine vs services applicatifs
 
 Distinction souvent floue mais essentielle :
 
-> **Définition. Service de domaine.** Logique métier qui **ne tient pas naturellement
-> dans une seule entité ou VO**, parce qu'elle implique plusieurs agrégats ou parce
-> qu'elle représente un calcul abstrait. Vit dans la couche **domaine**. Exemple :
-> `TransferService` qui débite un compte et crédite un autre.
+> **Que veut dire « service de domaine » ?** C'est une logique métier qui **ne loge
+> naturellement dans aucune entité ni VO**, parce qu'elle concerne plusieurs agrégats à la
+> fois. Elle vit dans la couche **domaine**. Exemple : un `TransferService` qui débite un
+> compte et crédite un autre ; la règle ne « tient » ni dans le compte débité ni dans le
+> compte crédité seul. Analogie : la règle du jeu d'échecs « le roque » implique deux
+> pièces ; elle n'appartient ni à la tour seule, ni au roi seul.
 
-> **Définition. Service applicatif (use case).** Coordonne **les étapes techniques** d'un
-> cas d'utilisation : lit depuis un repository, appelle le domaine, persiste, publie un
-> événement. Vit dans la couche **application**. Ne contient pas de règle métier.
+> **Que veut dire « service applicatif » (autre nom du use case) ?** C'est l'objet qui
+> coordonne **les étapes techniques** d'un cas d'utilisation : lire depuis un repository,
+> appeler le domaine, sauvegarder, publier un événement. Il vit dans la couche
+> **application** et ne contient **aucune** règle métier. C'est le chef d'orchestre, pas le
+> compositeur.
 
 Test simple pour les distinguer :
 
-- *Si on enlevait le service, perdrait-on une règle métier ?* → service de domaine.
-- *Si on enlevait le service, perdrait-on de l'orchestration technique ?* → service
-  applicatif.
+- *Si on enlevait le service, perdrait-on une règle métier ?* Alors c'est un service de
+  domaine.
+- *Si on enlevait le service, perdrait-on seulement de l'enchaînement technique ?* Alors
+  c'est un service applicatif.
 
 Un service applicatif peut appeler un service de domaine ; l'inverse est interdit.
 
@@ -660,13 +853,18 @@ Un service applicatif peut appeler un service de domaine ; l'inverse est interdi
 
 ## 10. Le pattern Repository
 
-> **Définition. Repository.** Port secondaire qui présente au domaine une **collection
-> en mémoire d'aggregate roots** : on `add`, on `get`, on `find`, on `remove`. Le
-> repository ne révèle **aucun** détail de stockage : pas de `SELECT`, pas de `JOIN`, pas
-> de `find_by_id_with_lock_for_update_recursive`.
+> **Que veut dire « repository » (entrepôt, dépôt) ?** C'est un port secondaire qui fait
+> *comme si* tous vos aggregate roots vivaient dans une simple collection en mémoire : on
+> `add`, on `get`, on `find`, on `remove`. Il cache totalement le stockage réel : aucun
+> `SELECT`, aucun `JOIN`, aucun nom de requête SQL tordu. Analogie : un bibliothécaire ;
+> vous demandez « le livre numéro 42 » et il vous le rapporte, sans que vous sachiez s'il
+> est rangé en rayon, en réserve ou numérisé.
+>
+> *SELECT* et *JOIN* sont des mots-clés SQL (lire des lignes, croiser deux tables) : ce sont
+> précisément les détails que le repository ne doit jamais laisser voir.
 
-Le repository est probablement le port le plus mal implémenté en pratique. Voici les
-règles que l'expert applique :
+Le repository est probablement le port le plus mal réalisé en pratique. Voici les règles
+solides à appliquer :
 
 1. **Un repository par aggregate root.** Pas un par table SQL, pas un par entité enfant.
 2. **Le contrat est dans le domaine**, l'implémentation dans l'infrastructure.
@@ -675,13 +873,19 @@ règles que l'expert applique :
 4. **Pas de fuite ORM** : la signature ne mentionne ni `QueryBuilder`, ni `EntityManager`,
    ni `Criteria`, ni `Doctrine\Collections`.
 5. **Renvoie des aggregate roots reconstitués**, pas des `array` ou des `stdClass`.
-6. **Pas de pagination générique** dans le port — sauf si la pagination est un concept
+6. **Pas de pagination générique** dans le port, sauf si la pagination est un concept
    métier (ce qui est rare).
 
-> **Anti-pattern : repository fourre-tout.** Méthode `findBy(array $criteria)` qui
+> **Que veut dire « anti-pattern » ?** Un *pattern* (« patron » ou « modèle ») est une
+> solution éprouvée à un problème récurrent. Un *anti-pattern* est l'inverse : une solution
+> tentante mais qui empire les choses sur le long terme. Repérer les anti-patterns évite de
+> répéter des erreurs connues.
+
+> **Anti-pattern : repository fourre-tout.** Une méthode `findBy(array $criteria)` qui
 > accepte n'importe quoi. C'est l'API d'un ORM, pas d'un repository de domaine. Les
-> appelants finissent par dupliquer la logique de critères partout, et le port devient
-> une fuite de l'ORM.
+> appelants finissent par recopier la même logique de critères partout, et le port se met
+> à laisser fuir l'ORM. (*API* veut dire *Application Programming Interface*, « interface de
+> programmation » : l'ensemble des fonctions qu'un composant offre aux autres.)
 
 ```php
 // MAUVAIS : signature qui fuit l'ORM
@@ -705,13 +909,19 @@ interface OrderRepositoryInterface
 
 ## 11. Événements de domaine et communication asynchrone
 
-> **Définition. Domain event (événement de domaine).** Objet immuable qui représente
-> **un fait métier qui s'est produit**, nommé au passé : `OrderPlaced`, `PaymentCaptured`,
-> `CustomerUpgradedToVip`. Il porte les données minimales nécessaires pour que d'autres
-> parties du système puissent réagir.
+> **Que veut dire « domain event » (événement de domaine) ?** Un objet immuable qui
+> annonce **un fait métier déjà arrivé**, nommé au passé : `OrderPlaced` (commande passée),
+> `PaymentCaptured` (paiement encaissé). Il transporte juste assez d'informations pour que
+> d'autres parties du système réagissent. Analogie : un faire-part ; il déclare un fait
+> accompli (« le mariage a eu lieu ») et chacun en fait ce qu'il veut.
 
-Un événement de domaine est *produit* par une entité ou un agrégat à l'occasion d'une
-transition d'état :
+> **Que veut dire « asynchrone » ?** *Synchrone* : on appelle quelqu'un et on attend sa
+> réponse avant de continuer (un appel téléphonique). *Asynchrone* : on dépose un message
+> et on continue son travail ; l'autre y répondra quand il pourra (un e-mail). La
+> communication par événements est asynchrone, ce qui découple les parties dans le temps.
+
+Un événement de domaine est *produit* par une entité ou un agrégat lors d'un changement
+d'état :
 
 ```php
 final class Order
@@ -762,17 +972,20 @@ Avantages de ce pattern :
 - **historicité** : chaque événement est un fait du passé, traçable et rejouable ;
 - **extensibilité** : ajouter un nouveau consommateur n'impacte pas le producteur.
 
-> **Piège production : la fenêtre fatale entre `save` et `publish`.** Le use case
+> **Piège en production : la fenêtre fatale entre `save` et `publish`.** Le use case
 > ci-dessus appelle d'abord `repository->save($order)`, puis `eventBus->publish($events)`.
-> Si le processus crashe *entre* les deux, l'agrégat est persisté mais l'événement n'est
-> jamais émis — incohérence silencieuse. La solution éprouvée est le **transactional
-> outbox**.
+> Si le programme s'arrête brutalement *entre* les deux, l'agrégat est enregistré mais
+> l'événement n'est jamais émis : incohérence silencieuse. La solution éprouvée est le
+> **transactional outbox**.
 
-> **Définition. Transactional outbox.** Pattern qui consiste à insérer l'événement de
-> domaine dans une table `outbox` *à l'intérieur de la même transaction* que l'écriture
-> de l'agrégat. Un worker dédié (relay) lit ensuite cette table et publie réellement les
-> événements vers le bus, en marquant ceux qui sont partis. La cohérence repose sur
-> l'atomicité de la transaction SQL, pas sur celle de deux ressources distinctes.
+> **Que veut dire « transactional outbox » (boîte d'envoi transactionnelle) ?** Plutôt que
+> de publier l'événement séparément, on l'écrit dans une table `outbox` (« boîte d'envoi »)
+> *dans la même transaction* que l'agrégat. Comme la transaction est « tout ou rien », soit
+> les deux sont enregistrés, soit aucun. Un programme à part (le *relay*, « relais ») lit
+> ensuite cette table et publie vraiment les événements sur le bus, en cochant ceux qui sont
+> partis. Analogie : au lieu de poster une lettre à part (risque de l'oublier), on la glisse
+> dans le même colis que le reste ; un facteur passe ensuite vider la boîte. *Worker* veut
+> dire « ouvrier » : un programme de fond qui tourne sans intervention humaine.
 
 ```mermaid
 flowchart LR
@@ -782,8 +995,14 @@ flowchart LR
 ```
 
 Sans outbox, on accepte un risque résiduel ; avec outbox, la livraison est garantie *au
-moins une fois* — il faut alors que les consommateurs soient **idempotents**, ce qui est
-une bonne discipline de toute façon.
+moins une fois*. Il faut alors que les consommateurs soient **idempotents**, ce qui est de
+toute façon une bonne discipline.
+
+> **Que veut dire « idempotent » ?** Une opération est idempotente si l'exécuter une fois
+> ou plusieurs fois produit exactement le même résultat. Analogie : appuyer sur le bouton
+> « éteindre » d'un appareil déjà éteint ne change rien ; il reste éteint. Comme un
+> événement peut être livré deux fois, le consommateur doit pouvoir le retraiter sans dégât
+> (par exemple en ignorant un paiement déjà encaissé).
 
 [Retour en haut](#table-des-matières)
 
@@ -792,21 +1011,33 @@ une bonne discipline de toute façon.
 ## 12. Bénéfices en testabilité (TDD)
 
 L'hexagonal n'impose pas le **TDD** (*Test-Driven Development*), mais les deux se
-renforcent mutuellement. Cette section précise *quel type de test* écrire à *quelle
-couche*, et — point souvent passé sous silence — explique pourquoi le design hexagonal
-**émerge** des tests au lieu d'être posé d'avance.
+renforcent. Voici *quel type de test* écrire à *quelle couche*, puis, point souvent passé
+sous silence, pourquoi le design hexagonal **émerge** des tests au lieu d'être posé
+d'avance.
 
-> **Définition. TDD (*Test-Driven Development*).** Pratique de développement où le test
-> est écrit *avant* le code de production. Cycle red → green → refactor : on écrit un
-> test qui échoue, on écrit le minimum pour qu'il passe, puis on refactorise sans casser
-> les tests.
+> **Que veut dire « TDD » (*Test-Driven Development*) ?** Traduit, « développement piloté
+> par les tests ». On écrit le test *avant* le code. Le cycle s'appelle *red, green,
+> refactor* (« rouge, vert, remanier ») : on écrit un test qui échoue (rouge), on écrit le
+> minimum pour qu'il réussisse (vert), puis on nettoie le code sans casser les tests
+> (remanier). Analogie : tracer la cible avant de tirer, plutôt que de dessiner la cible
+> autour du trou après coup. *Refactoriser* veut dire réorganiser le code sans changer ce
+> qu'il fait.
 
-> **Définition. Double de test.** Objet qui *remplace* une dépendance réelle dans un
-> test : *fake* (implémentation simplifiée mais fonctionnelle, ex. repository en
-> mémoire), *stub* (renvoie des valeurs prédéfinies), *mock* (vérifie qu'une méthode a
-> bien été appelée avec tels arguments), *spy* (enregistre les appels pour inspection).
+> **Que veut dire « double de test » ?** Un objet qui *remplace* une vraie dépendance le
+> temps d'un test, comme une doublure remplace l'acteur pour les cascades. Variantes :
+> *fake* (version simplifiée mais qui marche, par exemple un repository en mémoire), *stub*
+> (renvoie des valeurs fixées d'avance), *mock* (vérifie qu'une méthode a bien été appelée
+> avec tels arguments), *spy* (« espion », enregistre les appels pour les examiner après).
 
 ### 12.1. La pyramide hexagonale
+
+> **Que veut dire « test unitaire », « test d'intégration », « test end-to-end » ?** Un
+> *test unitaire* vérifie une petite brique isolée, sans rien d'extérieur (rapide, par
+> milliers). Un *test d'intégration* vérifie que deux pièces réelles s'emboîtent, par
+> exemple un adaptateur face à une vraie base. Un *test end-to-end* (« de bout en bout »)
+> parcourt tout le système comme un vrai utilisateur (lent, peu nombreux). Analogie : tester
+> une pièce de moteur seule, puis tester le moteur monté, puis faire rouler la voiture
+> entière sur circuit.
 
 À chaque couche correspond *un type de test* avec *des dépendances bien définies*.
 
@@ -825,11 +1056,10 @@ flowchart TB
 | Infrastructure (adaptateur) | DB / HTTP / file réels | Aucune | Vérifier que l'adaptateur respecte le contrat du port |
 | End-to-end | Tout | Aucune | Vérifier qu'un parcours utilisateur fonctionne |
 
-> **Piège fréquent.** Un test « unitaire » qui démarre Doctrine, instancie une vraie DB
-> en mémoire (SQLite) et appelle `DoctrineTaskRepository` n'est *pas* un test unitaire,
-> c'est un test d'intégration. La promesse hexagonale — *« les tests unitaires tournent
-> sans infrastructure »* — n'est tenue que si la classe sous test ne touche aucun port
-> secondaire concret.
+> **Piège fréquent.** Un test « unitaire » qui démarre Doctrine, crée une vraie base en
+> mémoire (SQLite) et appelle `DoctrineTaskRepository` n'est *pas* un test unitaire : c'est
+> un test d'intégration. La promesse hexagonale (« les tests unitaires tournent sans
+> infrastructure ») n'est tenue que si la classe testée ne touche aucun adaptateur réel.
 
 ### 12.2. TDD : le design émerge des tests, pas d'un BDUF
 
@@ -838,11 +1068,12 @@ définis d'abord tous mes ports, puis tous mes adaptateurs, puis je remplis le d
 C'est faux, et ce malentendu produit des architectures sur-modélisées avant la première
 ligne de code utile.
 
-> **Définition. BDUF (*Big Design Up Front*).** Anti-pattern qui consiste à concevoir
-> intégralement l'architecture d'une application — interfaces, classes, schéma de base —
-> *avant* d'écrire du code et des tests. L'hexagonal y est particulièrement vulnérable
-> parce qu'il propose un vocabulaire séduisant (ports, adaptateurs, agrégats) qu'on a
-> envie d'instancier *partout*, prématurément.
+> **Que veut dire « BDUF » (*Big Design Up Front*) ?** Traduit, « grande conception faite
+> d'avance ». C'est l'anti-pattern qui consiste à dessiner toute l'architecture (interfaces,
+> classes, schéma de base) *avant* d'avoir écrit le moindre code ou test. L'hexagonal y est
+> très exposé car son vocabulaire séduisant (ports, adaptateurs, agrégats) donne envie de
+> tout créer trop tôt. Analogie : commander tous les meubles d'une maison sur plan, avant
+> d'avoir vécu dedans et de savoir comment on s'en sert.
 
 La pratique correcte, qui mêle hexagonal et TDD :
 
@@ -859,10 +1090,9 @@ La pratique correcte, qui mêle hexagonal et TDD :
 6. **Écrire l'adaptateur réel** (Doctrine, HTTP) seulement quand le besoin de production
    le demande. Tant que vous itérez sur la conception, le fake suffit.
 
-Cette inversion — *test d'abord, port ensuite, adaptateur en dernier* — garantit que
-**aucun port ne survit s'il n'est pas justifié par un test**. C'est le meilleur garde-fou
-contre la sur-architecture. Un port sans test qui le motive est un port spéculatif :
-supprimez-le.
+Cette inversion (*test d'abord, port ensuite, adaptateur en dernier*) garantit qu'**aucun
+port ne survit s'il n'est pas justifié par un test**. C'est le meilleur garde-fou contre la
+sur-architecture. Un port qu'aucun test ne motive est un port spéculatif : supprimez-le.
 
 > **Règle de l'expert.** Si vous écrivez un port `XxxRepositoryInterface` avant d'avoir
 > un test qui s'en sert, vous faites du BDUF. Renversez : un test rouge dicte le port,
@@ -970,18 +1200,20 @@ C'est le test à écrire **en premier**, avant même d'avoir un adaptateur Doctr
 
 Trois noms circulent pour des architectures *cousines* mais *non identiques* : Hexagonal
 (Cockburn, 2005), Onion (Palermo, 2008), Clean Architecture (Martin, 2012). Beaucoup de
-tutoriels les utilisent comme synonymes. Ils partagent un cœur commun mais diffèrent dans
-les détails — et ces détails comptent quand on choisit comment structurer un projet.
+tutoriels les confondent. Elles partagent un cœur commun mais diffèrent dans les détails,
+et ces détails comptent au moment de structurer un projet.
 
-> **Définition. Onion Architecture.** Variante introduite par Jeffrey Palermo. Couches
-> concentriques : *Domain Model* → *Domain Services* → *Application Services* →
-> *Infrastructure*. Insiste sur le fait que toute dépendance va vers le centre.
+> **Que veut dire « Onion Architecture » (architecture en oignon) ?** Variante de Jeffrey
+> Palermo. Couches concentriques, de l'intérieur vers l'extérieur : modèle de domaine, puis
+> services de domaine, puis services applicatifs, puis infrastructure. Comme un oignon, et
+> avec la même règle : toute dépendance va vers le centre.
 
-> **Définition. Clean Architecture.** Synthèse proposée par Robert C. Martin. Quatre
-> cercles : *Entities* (règles métier d'entreprise) → *Use Cases* (règles spécifiques à
-> l'application) → *Interface Adapters* (controllers, presenters, gateways) → *Frameworks
-> & Drivers* (DB, web, devices). Introduit la notion de *boundary* explicite et de
-> *presenter* pour la sortie.
+> **Que veut dire « Clean Architecture » (architecture propre) ?** Synthèse de Robert C.
+> Martin. Quatre cercles : *Entities* (règles métier de l'entreprise), puis *Use Cases*
+> (règles propres à l'application), puis *Interface Adapters* (contrôleurs, presenters,
+> gateways), puis *Frameworks & Drivers* (base, web, périphériques). Elle ajoute la notion
+> de *boundary* (« frontière » explicite entre cercles) et de *presenter* (objet chargé de
+> mettre en forme la sortie, par exemple en JSON ou en HTML).
 
 | Aspect | Hexagonal | Onion | Clean |
 |---|---|---|---|
@@ -1001,8 +1233,9 @@ Points communs :
 Différences pratiques qui changent quelque chose :
 
 1. **Symétrie**. L'hexagonal traite les flux entrants et sortants de la même manière :
-   ce sont tous des ports. Clean introduit deux notions distinctes — *controllers* en
-   entrée, *presenters* en sortie — qui rappellent le pattern MVP.
+   ce sont tous des ports. Clean introduit deux notions distinctes (les *controllers* en
+   entrée, les *presenters* en sortie) qui rappellent le pattern MVP (*Model-View-Presenter*,
+   un découpage écran/données/présentation).
 2. **Use cases comme cercle**. Clean élève le *use case* au rang de couche autonome avec
    ses propres *boundaries* (interfaces d'entrée et de sortie). L'hexagonal les place
    dans une couche application sans cérémonie particulière.
@@ -1022,19 +1255,24 @@ Différences pratiques qui changent quelque chose :
 ## 14. Hexagonal et CQRS : commandes, requêtes, lecture
 
 L'architecture hexagonale ne dit rien de la manière dont les données *sortent* de
-l'application. Le **CQRS** (*Command Query Responsibility Segregation*) propose une
-réponse claire qui s'intègre très bien dans un hexagone — à condition d'en comprendre les
-arbitrages.
+l'application. Le **CQRS** apporte une réponse claire, qui s'intègre bien dans un hexagone à
+condition d'en comprendre les compromis.
 
-> **Définition. CQRS.** *Command Query Responsibility Segregation*. Pattern qui sépare
-> les opérations qui *modifient* l'état (*commands*, retournant idéalement `void`) des
-> opérations qui *lisent* l'état (*queries*, retournant un DTO). Conséquence : les deux
-> côtés peuvent avoir des modèles, des chemins de code et même des stockages différents.
+> **Que veut dire « CQRS » (*Command Query Responsibility Segregation*) ?** Traduit,
+> « séparation des responsabilités entre commandes et requêtes ». On sépare les opérations
+> qui *modifient* l'état (les *commands*, qui ne renvoient idéalement rien, `void`) de
+> celles qui *lisent* l'état (les *queries*, qui renvoient un DTO). Conséquence : les deux
+> côtés peuvent avoir des modèles, des chemins de code, voire des stockages différents.
+> Analogie : un robinet (qui modifie le niveau d'eau) et une jauge (qui le lit) sont deux
+> dispositifs séparés, même si tous deux concernent la même cuve.
 
-> **Définition. Read model (modèle de lecture).** Représentation des données pensée pour
-> être *lue efficacement* (souvent dénormalisée, pré-jointe, projetée), distincte du
-> modèle d'écriture (les agrégats). Peut vivre dans la même base que les écritures, dans
-> une vue SQL, dans un index Elasticsearch, ou être maintenu par projection d'événements.
+> **Que veut dire « read model » (modèle de lecture) ?** Une représentation des données
+> pensée pour être *lue vite*, souvent *dénormalisée* (les informations sont recopiées et
+> pré-assemblées pour éviter de recalculer à chaque lecture), distincte du modèle
+> d'écriture (les agrégats). Analogie : un tableau de bord de voiture ; il affiche
+> directement la vitesse, sans vous obliger à recalculer à partir des tours de roue. *Vue
+> SQL*, *index Elasticsearch*, *projection d'événements* sont trois techniques pour le
+> construire.
 
 ### 14.1. Côté écriture : le use case retourne `void` (ou un identifiant)
 
@@ -1083,10 +1321,21 @@ interface OrderListReadModel
 }
 ```
 
-L'adaptateur de lecture peut taper *directement* en SQL avec un `SELECT` joignant
-plusieurs tables, sans passer par les agrégats — c'est l'idée. Le port de lecture vit
-dans `Application/` (et non dans `Domain/`) car son DTO est typiquement orienté *vue*,
-pas métier.
+L'adaptateur de lecture peut interroger *directement* la base avec un `SELECT` qui croise
+plusieurs tables, sans passer par les agrégats : c'est tout l'intérêt. Le port de lecture
+vit dans `Application/` (et non dans `Domain/`) car son DTO est orienté *écran*, pas métier.
+
+Les deux chemins, écriture et lecture, partent du même client mais ne se croisent pas :
+
+```mermaid
+flowchart TB
+    CLIENT[Client : navigateur, application]
+    CLIENT -- "écrire (command)" --> CMD[Use case d'écriture]
+    CLIENT -- "lire (query)" --> QRY[Port de lecture]
+    CMD --> AGG[(Agrégats<br/>modèle d'écriture)]
+    QRY --> RM[(Read model<br/>modèle de lecture)]
+    AGG -. "même base ou synchronisation" .- RM
+```
 
 ### 14.3. Trois niveaux d'engagement CQRS
 
@@ -1096,11 +1345,16 @@ pas métier.
 | **CQRS modéré** | Read models dénormalisés (vues SQL, projections) dans la même base | Moyen | Quand les requêtes de lecture deviennent complexes ou lentes |
 | **CQRS complet** | Stockage d'écriture et de lecture séparés, synchronisés par événements | Élevé | Très gros volumes, latence de lecture critique |
 
-> **Posture.** En PHP/Symfony, le CQRS léger est le bon défaut : un dossier
+> **Posture.** En PHP/Symfony, le CQRS léger est le bon réglage par défaut : un dossier
 > `Application/UseCase/` pour les commandes, un dossier `Application/Query/` pour les
-> lectures. Les deux côtés peuvent partager le même Doctrine en sous-jacent. Ne franchir
-> les niveaux suivants qu'avec une raison mesurée (un *p95* de requête qui ne tient plus
-> son SLA, un volume qui justifie une réplique).
+> lectures, le même Doctrine dessous. Ne montez d'un niveau qu'avec une raison mesurée (par
+> exemple un *p95* de requête qui dépasse son SLA, ou un volume qui justifie une copie de la
+> base dédiée à la lecture).
+>
+> *p95* veut dire « 95e centile » : la durée que 95 % des requêtes ne dépassent pas (une
+> mesure de lenteur plus honnête que la moyenne). *SLA* veut dire *Service Level
+> Agreement*, « engagement de niveau de service » : la performance promise (par exemple
+> « réponse sous 200 ms »).
 
 [Retour en haut](#table-des-matières)
 
@@ -1108,19 +1362,20 @@ pas métier.
 
 ## 15. Composition Root et câblage
 
-Une question rarement traitée frontalement dans les tutoriels hexagonaux : *où* exactement
-décide-t-on quelle implémentation va satisfaire quel port ? La réponse a un nom.
+Question rarement traitée de front : *où* exactement décide-t-on quelle implémentation va
+satisfaire quel port ? La réponse a un nom.
 
-> **Définition. Composition Root.** *Unique* endroit du programme — généralement à la
-> frontière entre le démarrage de l'application et le reste du code — où l'on assemble
-> le graphe des objets : on choisit quel adaptateur implémente quel port, on configure
-> les dépendances, on instancie le conteneur. Aucune autre partie du code n'a le droit
-> d'instancier directement un adaptateur.
+> **Que veut dire « Composition Root » (racine de composition) ?** C'est l'*unique* endroit
+> du programme, situé tout au début du démarrage, où l'on assemble le graphe des objets : on
+> choisit quel adaptateur réalise quel port, on règle les dépendances, on crée le conteneur.
+> Aucune autre partie du code n'a le droit de fabriquer un adaptateur directement. Analogie :
+> le standard téléphonique d'autrefois, où une seule opératrice branchait les fils pour
+> relier chaque appelant au bon correspondant.
 
-Pourquoi un *seul* endroit ? Parce que c'est la seule garantie qu'un changement de
-configuration (passer de `DoctrineTaskRepository` à `InMemoryTaskRepository` en test) ne
-nécessite *aucune* modification ailleurs. Si plusieurs endroits du code instancient des
-adaptateurs, vous avez plusieurs Composition Roots — donc des points de couplage cachés.
+Pourquoi un *seul* endroit ? Parce que c'est la seule façon de garantir qu'un changement de
+branchement (passer de `DoctrineTaskRepository` à `InMemoryTaskRepository` en test)
+n'oblige à modifier *rien* d'autre. Si plusieurs endroits fabriquent des adaptateurs, vous
+avez plusieurs racines de composition, donc des couplages cachés.
 
 | Plateforme | Où vit la Composition Root |
 |---|---|
@@ -1145,8 +1400,9 @@ En Symfony, la Composition Root se compose de :
 
 Astuce concrète Symfony : utilisez `bin/console debug:container --parameters` et
 `bin/console debug:autowiring` pour vérifier que *chaque* interface du domaine a bien un
-alias unique. Une interface sans alias = un port sans implémentation = une exception au
-runtime.
+alias unique. Une interface sans alias égale un port sans implémentation, donc une erreur à
+l'exécution (*runtime*, « au moment où le programme tourne », par opposition à la
+compilation).
 
 [Retour en haut](#table-des-matières)
 
@@ -1157,14 +1413,18 @@ runtime.
 Un seul hexagone est rarement suffisant pour un système réel. Cette section traite la
 question de la *composition* de plusieurs hexagones.
 
-> **Définition. Monolithe modulaire.** Application déployée comme un seul exécutable mais
-> structurée en *modules* indépendants, chacun étant un bounded context complet (avec son
-> propre `Domain/`, `Application/`, `Infrastructure/`). Les modules communiquent par des
-> ports explicites, jamais par accès direct à leurs internals.
+> **Que veut dire « monolithe modulaire » ?** Un *monolithe* est une application livrée et
+> lancée d'un seul bloc. *Modulaire* signifie qu'à l'intérieur, elle est découpée en
+> modules indépendants, chacun étant un bounded context complet (avec ses propres
+> `Domain/`, `Application/`, `Infrastructure/`). Les modules se parlent par des ports
+> explicites, jamais en fouillant dans le code interne (*internals*) du voisin. Analogie :
+> un immeuble unique, mais avec des appartements bien séparés et des interphones officiels
+> entre eux.
 
-> **Définition. Microservice.** Bounded context déployé comme un *processus séparé*,
-> communiquant avec les autres via le réseau (HTTP, gRPC, messages). Les frontières
-> hexagonales coïncident avec les frontières de déploiement.
+> **Que veut dire « microservice » ?** Un bounded context lancé comme un *programme
+> séparé*, qui parle aux autres par le réseau (HTTP, gRPC, messages). Les frontières
+> hexagonales deviennent alors des frontières de déploiement. Analogie : non plus des
+> appartements dans un immeuble, mais des maisons indépendantes reliées par la route.
 
 ### 16.1. Composition dans un monolithe modulaire
 
@@ -1191,8 +1451,9 @@ Règles de composition :
    inter-modules. Le producteur n'a pas à savoir qui consomme.
 3. **Une ACL par frontière** : chaque module qui consomme un autre traduit le vocabulaire
    à la frontière, comme expliqué [section 5.3](#53-anti-corruption-layer-acl).
-4. **Outils de contrôle structurel** : `deptrac` (PHP) ou `phparkitect` permettent de
-   vérifier *automatiquement* qu'aucun import ne franchit illégalement une frontière.
+4. **Outils de contrôle structurel** : `deptrac` (PHP) ou `phparkitect` vérifient
+   *automatiquement* qu'aucun `import` (lien de code) ne franchit une frontière interdite.
+   Sans cette vérification automatique, les frontières finissent toujours par fuiter.
 
 ### 16.2. De monolithe modulaire à microservices
 
@@ -1203,11 +1464,28 @@ Un monolithe modulaire bien fait se *casse* en microservices presque mécaniquem
 - les domain events deviennent des messages Kafka/AMQP/Messenger transport ;
 - l'ACL devient une DTO sur le réseau au lieu d'un mapper en mémoire.
 
-> **Conseil de l'expert.** Commencez *toujours* par un monolithe modulaire. Tant que les
+```mermaid
+flowchart LR
+    subgraph MONO[Monolithe modulaire : un seul programme]
+        M1[Module Order]
+        M2[Module Billing]
+        M1 -- "appel en mémoire" --> M2
+    end
+    MONO ==> |extraction| MICRO
+
+    subgraph MICRO[Microservices : programmes séparés]
+        S1[Service Order]
+        S2[Service Billing]
+        S1 -- "appel réseau HTTP / message" --> S2
+    end
+```
+
+> **Conseil solide.** Commencez *toujours* par un monolithe modulaire. Tant que les
 > frontières hexagonales sont propres et vérifiées par `deptrac`, le passage en
-> microservices est une affaire d'extraction mécanique. Commencer en microservices avant
-> d'avoir compris ses bounded contexts conduit à un *distributed monolith* — le pire des
-> deux mondes.
+> microservices devient une extraction presque mécanique. Commencer directement en
+> microservices, avant d'avoir compris ses bounded contexts, conduit à un *distributed
+> monolith* (« monolithe distribué » : des services soi-disant séparés mais si emmêlés
+> qu'on ne peut plus les déployer indépendamment), le pire des deux mondes.
 
 [Retour en haut](#table-des-matières)
 
@@ -1215,14 +1493,24 @@ Un monolithe modulaire bien fait se *casse* en microservices presque mécaniquem
 
 ## 17. Migrer un legacy Symfony vers l'hexagonal
 
-La plupart des projets Symfony en production *ne sont pas* hexagonaux à la base. Cette
-section explique comment introduire l'hexagonal *sans* big-bang.
+La plupart des projets Symfony en production *ne sont pas* hexagonaux au départ. Voici
+comment introduire l'hexagonal *sans* big-bang.
 
-> **Définition. Strangler Fig pattern.** Stratégie de migration popularisée par Martin
-> Fowler. On ne réécrit pas le legacy d'un coup ; on l'enrobe progressivement. Chaque
-> nouvelle fonctionnalité — et chaque réécriture d'une ancienne — passe par la nouvelle
-> architecture, jusqu'à ce que le legacy soit naturellement étouffé par la nouvelle
-> structure (comme le ficus étrangleur tue lentement son hôte).
+> **Que veut dire « big-bang » (en migration logicielle) ?** Tout réécrire d'un coup, puis
+> basculer du jour au lendemain. C'est l'approche la plus risquée : si quoi que ce soit
+> casse, tout casse en même temps. On lui préfère une migration progressive.
+
+> **Que veut dire « Strangler Fig pattern » (motif du ficus étrangleur) ?** Stratégie de
+> migration popularisée par Martin Fowler. On ne réécrit pas le legacy d'un coup ; on
+> l'enrobe peu à peu. Chaque nouvelle fonctionnalité (et chaque réécriture d'une ancienne)
+> passe par la nouvelle architecture, jusqu'à ce que le legacy soit doucement étouffé.
+> L'image vient d'une plante tropicale, le ficus étrangleur, qui pousse autour d'un arbre
+> hôte et finit par le remplacer entièrement.
+
+> **Que veut dire « endpoint » ?** Un point d'entrée précis de l'application accessible de
+> l'extérieur, typiquement une URL associée à une action (par exemple `POST /tasks/42/
+> complete`). Migrer « un endpoint à la fois » veut dire rebrancher une seule URL vers le
+> nouveau code, sans toucher aux autres.
 
 ### 17.1. Étapes recommandées
 
@@ -1244,6 +1532,20 @@ section explique comment introduire l'hexagonal *sans* big-bang.
    contexte qui remplace la route legacy).
 7. **Itérer** : un endpoint à la fois, un cas d'utilisation à la fois.
 
+Ces étapes forment une boucle que l'on répète jusqu'à ce que le legacy soit étouffé :
+
+```mermaid
+flowchart LR
+    S1[1. Choisir un<br/>contexte candidat] --> S2[2. Tracer la frontière<br/>dans src/]
+    S2 --> S3[3. Poser une ACL<br/>au contact du legacy]
+    S3 --> S4[4. Premier use case<br/>en TDD, fakes]
+    S4 --> S5[5. Brancher<br/>l'adaptateur réel]
+    S5 --> S6[6. Rediriger<br/>un endpoint]
+    S6 --> S7{Reste-t-il du<br/>legacy a migrer ?}
+    S7 -- Oui --> S1
+    S7 -- Non --> FIN([Legacy etouffe])
+```
+
 ### 17.2. Schéma : ACL au contact du legacy
 
 ```mermaid
@@ -1255,14 +1557,24 @@ flowchart LR
     ACL --> LEG_SVC[CustomerManager<br/>service legacy]
 ```
 
+> **Que veut dire « anémique » (modèle de domaine anémique) ?** Se dit d'entités vidées de
+> tout comportement, réduites à des sacs de getters et setters, dont toute la logique a fui
+> dans des classes `*Service` géantes. Analogie : un patient anémique manque de fer ; ces
+> entités manquent de logique. C'est un anti-pattern (voir section 20).
+
 Règles d'or de la migration :
 
 - **N'importez jamais** une classe du legacy directement dans le nouveau domaine.
 - **N'étendez jamais** une classe du legacy depuis le nouveau code.
 - **Doublez les écritures** pendant la transition : le nouveau code écrit dans le nouveau
   modèle *et* dans l'ancien (via l'ACL), jusqu'à ce que tous les lecteurs aient migré.
-- **Outillez la frontière** avec `deptrac` pour interdire les imports interdits *au
-  niveau CI*. Sans contrainte automatique, la frontière finit par fuiter.
+- **Outillez la frontière** avec `deptrac` pour bloquer les `import` interdits dès la *CI*.
+  Sans contrainte automatique, la frontière finit toujours par fuiter.
+
+> **Que veut dire « CI » ?** *Continuous Integration*, « intégration continue » : un
+> serveur qui, à chaque envoi de code, relance automatiquement les tests et les
+> vérifications. Analogie : un contrôle qualité posté à la sortie d'usine, qui inspecte
+> chaque pièce avant qu'elle ne parte.
 
 > **Piège classique du strangler.** Coincer la migration à 70 % parce que les 30 %
 > restants sont *trop pénibles* à extraire. Pour éviter cela : prioriser la migration
@@ -1275,8 +1587,8 @@ Règles d'or de la migration :
 
 ## 18. Exemple complet en Python
 
-Voici un mini-domaine de **gestion de tâches** illustrant les trois couches. Le code est
-auto-contenu et exécutable. La version PHP/Symfony équivalente est donnée
+Un mini-domaine de **gestion de tâches** met en évidence les trois couches. Le code est
+autonome et s'exécute tel quel. La version PHP/Symfony équivalente est donnée
 [à la section 19](#19-symfony-en-hexagonal--exemple-complet).
 
 ### 18.1. Domaine
@@ -1463,12 +1775,20 @@ c'est l'objectif principal de l'architecture hexagonale.
 
 ## 19. Symfony en hexagonal : exemple complet
 
-Symfony est un framework PHP qui se prête très bien à une organisation hexagonale, à
-condition de **résister à la tentation** de tout coller dans des `Bundle`/`Service`/
-`Controller` couplés à Doctrine. Cette section reprend le mini-domaine de gestion de
-tâches et le décline en PHP 8.2+ / Symfony 7.
+Symfony est un framework PHP qui se prête bien à une organisation hexagonale, à condition de
+**résister à la tentation** de tout coller dans des `Bundle`/`Service`/`Controller` collés à
+Doctrine. Le même mini-domaine de gestion de tâches est décliné ici en PHP 8.2+ / Symfony 7.
+
+> **Que veut dire « framework » ?** Un cadre de travail prêt à l'emploi : un ensemble
+> d'outils et de conventions qui fait déjà le gros du travail répétitif (routage,
+> sécurité, accès base). Symfony et Laravel sont des frameworks PHP. Analogie : une cuisine
+> équipée louée, où le four et l'évier sont déjà installés ; vous apportez vos recettes.
 
 ### 19.1. Mapping conceptuel
+
+> **Que veut dire « mapping conceptuel » ?** Une table de correspondance qui dit : « tel
+> élément de Symfony joue le rôle de telle pièce hexagonale ». *Mapping* veut dire « mise
+> en correspondance ». C'est un plan de traduction entre deux vocabulaires.
 
 | Élément Symfony | Couche hexagonale | Rôle |
 |---|---|---|
@@ -1482,15 +1802,19 @@ tâches et le décline en PHP 8.2+ / Symfony 7.
 | Entité POPO | Couche domaine | Règles et invariants métier |
 | Mapper Doctrine ↔ POPO | Infrastructure | Traduit la POPO en entité ORM et inversement |
 
-> **Définition. Conteneur de services Symfony.** Composant Symfony qui *construit* tous
-> les services de l'application en injectant automatiquement leurs dépendances
-> (*autowiring*). Il lit la configuration (`services.yaml`, attributs PHP, *compiler
-> passes*), résout le graphe et instancie chaque service au moment où il est demandé.
+> **Que veut dire « conteneur de services » (Symfony) ?** Un composant qui *fabrique* tous
+> les objets de l'application et leur fournit automatiquement leurs dépendances. Il lit la
+> configuration, résout qui a besoin de qui, et crée chaque service au moment voulu.
+> Analogie : un majordome qui connaît tout l'inventaire de la maison et apporte à chacun
+> exactement ce qu'il demande, sans qu'on aille le chercher soi-même. (*Service* désigne ici
+> simplement un objet géré par ce conteneur.)
 
-> **Définition. Autowiring.** Mécanisme par lequel le conteneur Symfony, à partir des
-> *types* déclarés dans le constructeur d'une classe, retrouve automatiquement le service
-> correspondant et l'injecte. Pour qu'il sache *quelle* implémentation injecter quand le
-> type est une interface, il faut un **alias** dans `services.yaml`.
+> **Que veut dire « autowiring » (câblage automatique) ?** À partir des *types* écrits dans
+> le constructeur d'une classe, le conteneur retrouve tout seul le bon service à injecter.
+> Quand le type est une interface (un port), il faut lui indiquer *quelle* implémentation
+> choisir au moyen d'un **alias** dans `services.yaml`. Analogie : un branchement automatique
+> qui sait reconnaître la forme de chaque prise. *Compiler pass* (« passe de compilation »)
+> désigne un branchement plus avancé, fait en PHP au démarrage.
 
 ### 19.2. Arborescence proposée
 
@@ -1535,6 +1859,12 @@ Chaque bounded context a son propre quadruplet `Domain / Application / Infrastru
 UserInterface`. Cette arborescence rend la frontière hexagonale **visible à l'œil nu**.
 
 ### 19.3. Le domaine en POPO
+
+> **Que veut dire « POPO » ?** *Plain Old PHP Object*, « simple objet PHP ordinaire ». Une
+> classe PHP qui n'hérite d'aucune classe de framework et ne porte aucune annotation
+> technique imposée : juste du PHP pur. C'est exactement ce qu'on veut dans le domaine.
+> L'équivalent en Java se nomme POJO (*Plain Old Java Object*). Analogie : un ingrédient
+> brut, non transformé, qui n'appartient à aucune marque.
 
 ```php
 <?php
@@ -1886,7 +2216,7 @@ final class DoctrineTaskRepository implements TaskRepositoryInterface
 > 2.7). Toute documentation hexagonale qui montre encore `$em->merge($orm)` est obsolète :
 > il faut `find` + `persist` (création) ou mutation des champs de l'entité managée
 > (mise à jour). Cette nuance est *exactement* le genre de détail d'infrastructure qui
-> *ne doit pas* fuiter dans le port `TaskRepositoryInterface` — celui-ci se contente de
+> *ne doit pas* fuiter dans le port `TaskRepositoryInterface` ; celui-ci se contente de
 > dire `save(Task $task): void`.
 
 Ce découplage a un coût (deux classes au lieu d'une). Pour un petit projet, on peut
@@ -2020,15 +2350,22 @@ final class TaskTest extends TestCase
 }
 ```
 
-Aucun *bootstrap* Symfony, aucune base de données, aucun `KernelTestCase`. Ces tests
+Aucun démarrage de Symfony, aucune base de données, aucun `KernelTestCase`. Ces tests
 s'exécutent en quelques millisecondes et n'ont **aucune raison** de casser tant que la
 règle métier ne change pas.
+
+> **Que veut dire « bootstrap » ?** La phase de démarrage d'une application, où elle charge
+> sa configuration et construit ses objets avant de pouvoir travailler. L'image vient de
+> l'expression anglaise « se hisser par ses propres lacets ». Un test de domaine pur évite
+> tout ce démarrage, d'où sa rapidité.
 
 [Retour en haut](#table-des-matières)
 
 ---
 
 ## 20. Anti-patterns et pièges courants
+
+Chaque ligne nomme une erreur fréquente, la décrit, puis donne le réflexe correct.
 
 | Piège | Description | Comment l'éviter |
 |---|---|---|
@@ -2063,20 +2400,31 @@ règle métier ne change pas.
 
 ## 21. Quand ne PAS utiliser l'hexagonal ?
 
-L'architecture hexagonale **a un coût** (plus de fichiers, plus d'interfaces, plus
-d'indirection). Elle n'est pas toujours rentable :
+L'architecture hexagonale **a un coût** : plus de fichiers, plus d'interfaces, plus
+d'indirection. Elle n'est donc pas toujours rentable.
 
-- **Scripts jetables / proofs of concept** : la verbosité ne se rentabilise pas.
-- **Applications CRUD pures** sans règles métier (un simple admin Symfony EasyAdmin ou
-  Django suffit).
-- **Domaine extrêmement instable** où l'on ne sait pas encore ce qu'on construit
-  (commencer simple, refactorer vers l'hexagonal *quand* les frontières deviennent
-  claires).
-- **Très petites équipes** qui maîtrisent mieux un style classique : la cohérence prime
-  sur l'élégance théorique.
-- **Latences critiques** sur des chemins ultra-chauds : la double indirection (port +
-  adaptateur + mapper) ajoute des nanosecondes ; rare, mais existant en HFT et en jeu
-  vidéo temps réel.
+> **Que veut dire « indirection » ?** Le fait de passer par un intermédiaire au lieu
+> d'aller droit au but (par exemple parler à un port plutôt qu'à la base directement).
+> Chaque intermédiaire ajoute de la souplesse mais aussi un petit détour. Analogie :
+> passer par un standard téléphonique plutôt que d'appeler la personne en direct.
+
+Cas où elle ne se justifie pas :
+
+- **Scripts jetables et *proofs of concept*** : la lourdeur ne se rentabilise pas. Un
+  *proof of concept* (« preuve de concept ») est un prototype rapide destiné à valider une
+  idée, pas à durer.
+- **Applications CRUD pures** sans règle métier (un simple panneau d'administration
+  Symfony EasyAdmin ou Django suffit). *CRUD* veut dire *Create, Read, Update, Delete*
+  (« créer, lire, modifier, supprimer ») : les quatre opérations de base sur des données,
+  sans logique par-dessus.
+- **Domaine très instable**, où l'on ne sait pas encore ce qu'on construit (commencer
+  simple, basculer vers l'hexagonal *quand* les frontières deviennent claires).
+- **Très petites équipes** plus à l'aise avec un style classique : la cohérence prime sur
+  l'élégance théorique.
+- **Latences critiques** sur des chemins ultra-sollicités : la double indirection (port,
+  adaptateur, mapper) ajoute des nanosecondes ; rare, mais réel en HFT et en jeu vidéo
+  temps réel. *HFT* veut dire *High-Frequency Trading*, « trading à haute fréquence », où
+  l'on passe des milliers d'ordres de bourse par seconde et où chaque microseconde compte.
 
 > **Règle pragmatique.** Si vous n'avez pas de logique métier non triviale, vous n'avez
 > probablement pas besoin d'hexagonal. Mais dès qu'une règle métier mérite d'être testée
@@ -2089,21 +2437,21 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ## 22. Pour aller plus loin
 
-- Alistair Cockburn, *Hexagonal Architecture*, 2005 — l'article fondateur.
-- Robert C. Martin, *Clean Architecture*, 2017 — vision élargie avec les *use cases* et
+- Alistair Cockburn, *Hexagonal Architecture*, 2005 : l'article fondateur.
+- Robert C. Martin, *Clean Architecture*, 2017 : vision élargie avec les *use cases* et
   la règle de dépendance.
-- Eric Evans, *Domain-Driven Design*, 2003 — le livre bleu, fondations stratégiques et
+- Eric Evans, *Domain-Driven Design*, 2003 : le livre bleu, fondations stratégiques et
   tactiques.
-- Vaughn Vernon, *Implementing Domain-Driven Design*, 2013 — le livre rouge, exemples
+- Vaughn Vernon, *Implementing Domain-Driven Design*, 2013 : le livre rouge, exemples
   concrets et patterns d'implémentation.
-- Vaughn Vernon, *Domain-Driven Design Distilled*, 2016 — une introduction synthétique
+- Vaughn Vernon, *Domain-Driven Design Distilled*, 2016 : une introduction synthétique
   au DDD pour qui ne veut pas avaler les 600 pages du livre rouge.
-- Tom Hombergs, *Get Your Hands Dirty on Clean Architecture*, 2019 — exemple Java/Spring
+- Tom Hombergs, *Get Your Hands Dirty on Clean Architecture*, 2019 : exemple Java/Spring
   complet, transposable sans douleur en PHP/Symfony.
 - Carlos Buenosvinos, Christian Soronellas et Keyvan Akbary, *Domain-Driven Design in
-  PHP*, 2017 — le pendant PHP du livre rouge, avec exemples Symfony/Doctrine.
-- Matthias Noback, *Object Design Style Guide* et *Advanced Web Application Architecture*
-  — beaucoup d'idées concrètes pour structurer un projet PHP moderne.
+  PHP*, 2017 : le pendant PHP du livre rouge, avec exemples Symfony/Doctrine.
+- Matthias Noback, *Object Design Style Guide* et *Advanced Web Application Architecture* :
+  beaucoup d'idées concrètes pour structurer un projet PHP moderne.
 
 [Retour en haut](#table-des-matières)
 
@@ -2111,7 +2459,7 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ## 23. Auteur
 
-**Tanguy Chénier** — Tansoftware
+**Tanguy Chénier**, Tansoftware
 
 - Site : [tansoftware.com](https://www.tansoftware.com)
 - LinkedIn : [linkedin.com/in/tanguy-chenier](https://www.linkedin.com/in/tanguy-chenier/)
@@ -2124,6 +2472,6 @@ d'indirection). Elle n'est pas toujours rentable :
 
 ## 24. Licence
 
-Ce dépôt est distribué sous licence **MIT** — voir le fichier [LICENCE](./LICENCE).
+Distribué sous licence **MIT** : voir le fichier [LICENCE](./LICENCE).
 
 [Retour en haut](#table-des-matières)
