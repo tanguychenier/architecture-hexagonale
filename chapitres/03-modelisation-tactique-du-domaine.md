@@ -90,7 +90,7 @@ classDiagram
     class Customer {
         +CustomerId id
     }
-    Order "1 (racine)" *-- "0..* (enfants)" OrderLine : contient
+    Order "1 (racine)" *-- "0..· (enfants)" OrderLine : contient
     Order ..> Customer : reference par customerId
 ```
 
